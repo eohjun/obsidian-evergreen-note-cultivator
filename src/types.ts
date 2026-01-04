@@ -1,18 +1,20 @@
 /**
  * Plugin Settings and Types
+ * Evergreen Note Cultivator
  */
 
-import { LLMProviderType } from './core/domain';
+import type { LLMProviderType } from './core/domain';
 
 /**
  * AI 설정
  */
 export interface AISettings {
   provider: LLMProviderType;
-  model: string;
-  apiKeys: Record<LLMProviderType, string>;
+  apiKeys: Partial<Record<LLMProviderType, string>>;
+  models: Partial<Record<LLMProviderType, string>>;
   maxTokens: number;
   temperature: number;
+  budgetLimit?: number;
 }
 
 /**
@@ -25,11 +27,22 @@ export interface DisplaySettings {
 }
 
 /**
+ * 평가 설정
+ */
+export interface AssessmentSettings {
+  autoAssessOnOpen: boolean;
+  showDetailedFeedback: boolean;
+  enableSplitSuggestions: boolean;
+  enableConnectionSuggestions: boolean;
+}
+
+/**
  * 플러그인 설정
  */
 export interface PluginSettings {
   ai: AISettings;
   display: DisplaySettings;
+  assessment: AssessmentSettings;
   frontmatterKey: string;
 }
 
@@ -39,13 +52,8 @@ export interface PluginSettings {
 export const DEFAULT_SETTINGS: PluginSettings = {
   ai: {
     provider: 'claude',
-    model: 'claude-sonnet-4-20250514',
-    apiKeys: {
-      claude: '',
-      openai: '',
-      gemini: '',
-      grok: '',
-    },
+    apiKeys: {},
+    models: {},
     maxTokens: 4096,
     temperature: 0.7,
   },
@@ -53,6 +61,12 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     showMaturityInExplorer: true,
     showScoreInSidebar: true,
     autoOpenSidebar: false,
+  },
+  assessment: {
+    autoAssessOnOpen: false,
+    showDetailedFeedback: true,
+    enableSplitSuggestions: true,
+    enableConnectionSuggestions: true,
   },
   frontmatterKey: 'growth-stage',
 };

@@ -1,0 +1,686 @@
+/**
+ * Evergreen Note Cultivator - Styles
+ */
+
+/* ============================================
+   Cultivator Sidebar View
+   ============================================ */
+
+.cultivator-view-container {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Empty State */
+.cultivator-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.cultivator-empty .cultivator-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.cultivator-empty p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Header with Maturity */
+.cultivator-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  background: var(--background-secondary);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.cultivator-maturity-icon {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+
+.cultivator-maturity-text {
+  margin: 0 0 4px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.cultivator-maturity-desc {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Note Title */
+.cultivator-note-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-normal);
+  word-break: break-word;
+}
+
+/* Stats Section */
+.cultivator-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.cultivator-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 8px;
+  background: var(--background-secondary);
+  border-radius: 6px;
+}
+
+.cultivator-stat-icon {
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.cultivator-stat-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.cultivator-stat-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+/* Actions Section */
+.cultivator-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cultivator-btn {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.cultivator-btn-primary {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.cultivator-btn-primary:hover {
+  background: var(--interactive-accent-hover);
+}
+
+.cultivator-btn-secondary {
+  background: var(--background-secondary);
+  color: var(--text-normal);
+}
+
+.cultivator-btn-secondary:hover {
+  background: var(--background-modifier-hover);
+}
+
+/* Assessment Results */
+.cultivator-results {
+  padding: 16px;
+  background: var(--background-secondary);
+  border-radius: 8px;
+}
+
+.cultivator-results h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cultivator-score {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.cultivator-score-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-normal);
+}
+
+.cultivator-score-grade {
+  font-size: 16px;
+  padding: 4px 12px;
+  background: var(--background-primary);
+  border-radius: 4px;
+  color: var(--text-muted);
+}
+
+/* Dimension Bars */
+.cultivator-dimensions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cultivator-dimension {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cultivator-dimension-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.cultivator-dimension-bar-bg {
+  height: 6px;
+  background: var(--background-modifier-border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.cultivator-dimension-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.cultivator-bar-excellent {
+  background: var(--color-green);
+}
+
+.cultivator-bar-good {
+  background: var(--color-blue);
+}
+
+.cultivator-bar-fair {
+  background: var(--color-yellow);
+}
+
+.cultivator-bar-poor {
+  background: var(--color-red);
+}
+
+/* Recommendation */
+.cultivator-recommendation {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--background-primary);
+  border-radius: 6px;
+  border-left: 3px solid var(--interactive-accent);
+}
+
+.cultivator-recommendation p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-normal);
+}
+
+/* Growth Guide */
+.cultivator-guide {
+  padding: 16px;
+  background: var(--background-secondary);
+  border-radius: 8px;
+}
+
+.cultivator-guide h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cultivator-tip {
+  padding: 12px;
+  background: var(--background-primary);
+  border-radius: 6px;
+}
+
+.cultivator-tip p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ============================================
+   Assessment Modal
+   ============================================ */
+
+.assessment-modal {
+  max-width: 700px;
+  width: 90vw;
+}
+
+.assessment-modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Tab Navigation */
+.assessment-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  padding-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.assessment-tab {
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-muted);
+  transition: all 0.15s ease;
+}
+
+.assessment-tab:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.assessment-tab.is-active {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+/* Tab Content */
+.assessment-tab-content {
+  padding: 16px 0;
+}
+
+/* Loading State */
+.assessment-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  gap: 16px;
+}
+
+.assessment-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--background-modifier-border);
+  border-top-color: var(--interactive-accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error State */
+.assessment-error {
+  padding: 20px;
+  background: rgba(var(--color-red-rgb), 0.1);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.assessment-error p {
+  margin: 0;
+  color: var(--color-red);
+}
+
+/* Overview Tab */
+.assessment-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.assessment-score-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  background: var(--background-secondary);
+  border-radius: 8px;
+}
+
+.assessment-score-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+  background: var(--background-primary);
+  border: 3px solid var(--interactive-accent);
+  color: var(--text-normal);
+}
+
+.assessment-score-info h4 {
+  margin: 0 0 4px 0;
+  font-size: 18px;
+}
+
+.assessment-score-info p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.assessment-summary {
+  padding: 16px;
+  background: var(--background-secondary);
+  border-radius: 8px;
+}
+
+.assessment-summary h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+}
+
+.assessment-summary p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-normal);
+}
+
+/* Dimension Cards */
+.assessment-dimension-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.assessment-dimension-card {
+  padding: 16px;
+  background: var(--background-secondary);
+  border-radius: 8px;
+}
+
+.assessment-dimension-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.assessment-dimension-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.assessment-dimension-score {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--interactive-accent);
+}
+
+.assessment-dimension-feedback {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* Suggestions */
+.assessment-suggestion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.assessment-suggestion-card {
+  padding: 16px;
+  background: var(--background-secondary);
+  border-radius: 8px;
+  border-left: 3px solid var(--interactive-accent);
+}
+
+.assessment-suggestion-card h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+}
+
+.assessment-suggestion-card p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* Connections */
+.assessment-connection-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.assessment-connection-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--background-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.assessment-connection-item:hover {
+  background: var(--background-modifier-hover);
+}
+
+.assessment-connection-relevance {
+  font-size: 12px;
+  padding: 2px 8px;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border-radius: 10px;
+}
+
+.assessment-connection-info {
+  flex: 1;
+}
+
+.assessment-connection-title {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.assessment-connection-reason {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Growth Guide */
+.assessment-growth-guide {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.assessment-current-stage {
+  padding: 20px;
+  background: var(--background-secondary);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.assessment-current-stage .stage-icon {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+
+.assessment-current-stage h4 {
+  margin: 0 0 4px 0;
+}
+
+.assessment-current-stage p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.assessment-next-steps {
+  padding: 16px;
+  background: var(--background-secondary);
+  border-radius: 8px;
+}
+
+.assessment-next-steps h4 {
+  margin: 0 0 12px 0;
+}
+
+.assessment-step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.assessment-step-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: var(--background-primary);
+  border-radius: 6px;
+}
+
+.assessment-step-number {
+  width: 24px;
+  height: 24px;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.assessment-step-content {
+  flex: 1;
+}
+
+.assessment-step-content h5 {
+  margin: 0 0 4px 0;
+  font-size: 13px;
+}
+
+.assessment-step-content p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Maturity Selection */
+.assessment-maturity-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.assessment-maturity-option {
+  padding: 16px;
+  background: var(--background-secondary);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+.assessment-maturity-option:hover {
+  border-color: var(--background-modifier-border);
+}
+
+.assessment-maturity-option.is-selected {
+  border-color: var(--interactive-accent);
+  background: rgba(var(--interactive-accent-rgb), 0.1);
+}
+
+.assessment-maturity-option .icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.assessment-maturity-option h5 {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+}
+
+.assessment-maturity-option p {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Update Button */
+.assessment-update-btn {
+  width: 100%;
+  padding: 12px;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.assessment-update-btn:hover {
+  background: var(--interactive-accent-hover);
+}
+
+.assessment-update-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   Responsive Adjustments
+   ============================================ */
+
+@media (max-width: 600px) {
+  .cultivator-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .assessment-tabs {
+    justify-content: center;
+  }
+
+  .assessment-maturity-options {
+    grid-template-columns: 1fr;
+  }
+}
