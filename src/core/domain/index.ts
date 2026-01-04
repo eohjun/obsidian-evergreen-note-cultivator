@@ -33,3 +33,12 @@ export type {
   LLMProviderType,
   ModelConfig,
 } from './interfaces';
+
+// Constants
+export {
+  AI_PROVIDERS,
+  MODEL_CONFIGS,
+  getModelsByProvider,
+  getModelConfigById,
+} from './constants';
+export type { AIProviderConfig } from './constants';
