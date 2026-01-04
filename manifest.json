@@ -1,0 +1,10 @@
+{
+  "id": "evergreen-note-cultivator",
+  "name": "Evergreen Note Cultivator",
+  "version": "0.1.0",
+  "minAppVersion": "1.0.0",
+  "description": "Guide note growth from seed to evergreen with AI-powered assessment and feedback",
+  "author": "eohjun",
+  "authorUrl": "https://github.com/eohjun",
+  "isDesktopOnly": false
+}
