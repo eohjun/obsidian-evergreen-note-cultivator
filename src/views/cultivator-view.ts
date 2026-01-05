@@ -179,17 +179,13 @@ export class CultivatorView extends ItemView {
 
     const loadingEl = this.dynamicContentEl.createDiv({ cls: 'cultivator-loading' });
 
-    // Spinner element
-    const spinnerEl = loadingEl.createDiv({ cls: 'cultivator-spinner' });
-    spinnerEl.setAttribute('aria-label', '로딩 중');
+    // Spinner element - using a wrapper for better control
+    const spinnerWrapper = loadingEl.createDiv({ cls: 'cultivator-spinner-wrapper' });
+    spinnerWrapper.createDiv({ cls: 'cultivator-spinner' });
 
     loadingEl.createEl('p', {
       cls: 'cultivator-loading-text',
-      text: '노트 품질을 평가 중입니다...'
-    });
-    loadingEl.createEl('p', {
-      cls: 'cultivator-loading-hint',
-      text: 'AI가 5개 차원에서 분석하고 있습니다'
+      text: 'AI가 노트 품질을 평가하고 있습니다...'
     });
   }
 
@@ -325,19 +321,23 @@ export class CultivatorView extends ItemView {
       this.renderDimensionBar(dimensionsEl, dim);
     });
 
-    // Recommended maturity with update button
+    // Recommended maturity with update button (inline layout)
     const recommendedMaturity = assessment.recommendedMaturity;
     if (recommendedMaturity) {
       const recEl = resultsEl.createDiv({ cls: 'cultivator-recommendation' });
 
-      const recTextEl = recEl.createDiv({ cls: 'cultivator-recommendation-text' });
-      recTextEl.createEl('span', { text: '추천 성숙도: ' });
-      recTextEl.createEl('span', {
+      // Left side: label and value
+      const recLeftEl = recEl.createDiv({ cls: 'cultivator-recommendation-left' });
+      recLeftEl.createEl('span', {
+        cls: 'cultivator-recommendation-label',
+        text: '추천 성숙도:'
+      });
+      recLeftEl.createEl('span', {
         cls: 'cultivator-recommendation-value',
         text: `${recommendedMaturity.icon} ${recommendedMaturity.displayName}`
       });
 
-      // Check if current maturity is different from recommended
+      // Right side: button or match indicator
       const cache = this.app.metadataCache.getFileCache(this.currentFile!);
       const currentMaturityValue = cache?.frontmatter?.[this.plugin.settings.frontmatterKey];
       const currentMaturity = currentMaturityValue
@@ -346,14 +346,14 @@ export class CultivatorView extends ItemView {
 
       if (currentMaturity.level !== recommendedMaturity.level) {
         const updateBtn = recEl.createEl('button', {
-          cls: 'cultivator-btn cultivator-btn-update',
-          text: '이 성숙도로 업데이트'
+          cls: 'cultivator-btn-update',
+          text: '업데이트'
         });
         updateBtn.addEventListener('click', () => this.updateMaturityToRecommended(recommendedMaturity));
       } else {
         recEl.createEl('span', {
           cls: 'cultivator-recommendation-match',
-          text: '✓ 현재 성숙도와 일치'
+          text: '✓ 일치'
         });
       }
     }
