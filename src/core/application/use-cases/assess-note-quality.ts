@@ -14,7 +14,6 @@ import {
   NoteAssessment,
   ImprovementSuggestion,
   QualityScore,
-  QualityDimension,
   MaturityLevel,
 } from '../../domain';
 import type { ILLMProvider, LLMResponse, NoteData } from '../../domain';
@@ -39,12 +38,6 @@ interface LLMAssessmentResponse {
     evidence: { score: number; feedback: string };
     originality: { score: number; feedback: string };
   };
-  improvements: {
-    dimension: string;
-    priority: 'high' | 'medium' | 'low';
-    suggestion: string;
-    example?: string;
-  }[];
   splitSuggestion?: {
     reason: string;
     suggestedNotes: {
@@ -121,33 +114,25 @@ ${note.content}
   "dimensions": {
     "atomicity": {
       "score": 0-100,
-      "feedback": "평가 이유 (1-2문장)"
+      "feedback": "현재 상태 평가 및 구체적인 개선 방향 (2-3문장)"
     },
     "connectivity": {
       "score": 0-100,
-      "feedback": "평가 이유 (1-2문장)"
+      "feedback": "현재 상태 평가 및 구체적인 개선 방향 (2-3문장)"
     },
     "clarity": {
       "score": 0-100,
-      "feedback": "평가 이유 (1-2문장)"
+      "feedback": "현재 상태 평가 및 구체적인 개선 방향 (2-3문장)"
     },
     "evidence": {
       "score": 0-100,
-      "feedback": "평가 이유 (1-2문장)"
+      "feedback": "현재 상태 평가 및 구체적인 개선 방향 (2-3문장)"
     },
     "originality": {
       "score": 0-100,
-      "feedback": "평가 이유 (1-2문장)"
+      "feedback": "현재 상태 평가 및 구체적인 개선 방향 (2-3문장)"
     }
   },
-  "improvements": [
-    {
-      "dimension": "차원명 (한글)",
-      "priority": "high|medium|low",
-      "suggestion": "개선 제안 (구체적으로)",
-      "example": "예시 (선택적)"
-    }
-  ],
   "splitSuggestion": {
     "reason": "분리가 필요한 이유 (원자성 점수 50 미만인 경우에만)",
     "suggestedNotes": [
@@ -163,8 +148,7 @@ ${note.content}
 
 **주의사항:**
 - 각 차원의 점수는 객관적 기준에 따라 부여
-- improvements는 **점수가 80점 미만인 차원에 대해서만** 생성 (80점 이상인 차원은 제외)
-- 개선이 필요한 차원이 없으면 improvements는 빈 배열 []
+- feedback은 현재 상태 평가와 함께 **구체적인 개선 방향**을 포함
 - splitSuggestion은 원자성 점수가 50 미만인 경우에만 포함`;
 }
 
@@ -251,29 +235,30 @@ export class AssessNoteQualityUseCase {
       note.metadata.growthStage as string | undefined
     );
 
-    // Map Korean dimension names to English keys for score lookup
-    const dimensionNameMap: Record<string, keyof typeof parsed.dimensions> = {
-      '원자성': 'atomicity',
-      '연결성': 'connectivity',
-      '명확성': 'clarity',
-      '근거': 'evidence',
-      '독창성': 'originality',
-    };
+    // Build improvements directly from dimension feedback (score < 80)
+    const dimensionConfig: {
+      key: keyof typeof parsed.dimensions;
+      name: string;
+    }[] = [
+      { key: 'atomicity', name: '원자성' },
+      { key: 'connectivity', name: '연결성' },
+      { key: 'clarity', name: '명확성' },
+      { key: 'evidence', name: '근거' },
+      { key: 'originality', name: '독창성' },
+    ];
 
-    // Build improvements list, filtering out high-scoring dimensions (>= 80)
-    const improvements: ImprovementSuggestion[] = parsed.improvements
-      .filter((imp) => {
-        const dimKey = dimensionNameMap[imp.dimension];
-        if (!dimKey) return true; // Keep if dimension name not recognized
-        const score = parsed.dimensions[dimKey]?.score ?? 0;
-        return score < 80; // Only include dimensions with score < 80
-      })
-      .map((imp) => ({
-        dimension: imp.dimension,
-        priority: imp.priority,
-        suggestion: imp.suggestion,
-        example: imp.example,
-      }));
+    const improvements: ImprovementSuggestion[] = dimensionConfig
+      .filter(({ key }) => parsed.dimensions[key].score < 80)
+      .map(({ key, name }) => {
+        const dim = parsed.dimensions[key];
+        const priority: 'high' | 'medium' | 'low' =
+          dim.score < 40 ? 'high' : dim.score < 60 ? 'medium' : 'low';
+        return {
+          dimension: name,
+          priority,
+          suggestion: dim.feedback,
+        };
+      });
 
     // Create assessment
     const assessment = NoteAssessment.create({
