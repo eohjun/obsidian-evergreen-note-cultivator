@@ -163,7 +163,8 @@ ${note.content}
 
 **주의사항:**
 - 각 차원의 점수는 객관적 기준에 따라 부여
-- improvements는 점수가 낮은 차원 위주로 2-4개
+- improvements는 **점수가 70점 미만인 차원에 대해서만** 생성 (70점 이상인 차원은 제외)
+- 개선이 필요한 차원이 없으면 improvements는 빈 배열 []
 - splitSuggestion은 원자성 점수가 50 미만인 경우에만 포함`;
 }
 
@@ -250,13 +251,29 @@ export class AssessNoteQualityUseCase {
       note.metadata.growthStage as string | undefined
     );
 
-    // Build improvements list
-    const improvements: ImprovementSuggestion[] = parsed.improvements.map((imp) => ({
-      dimension: imp.dimension,
-      priority: imp.priority,
-      suggestion: imp.suggestion,
-      example: imp.example,
-    }));
+    // Map Korean dimension names to English keys for score lookup
+    const dimensionNameMap: Record<string, keyof typeof parsed.dimensions> = {
+      '원자성': 'atomicity',
+      '연결성': 'connectivity',
+      '명확성': 'clarity',
+      '근거': 'evidence',
+      '독창성': 'originality',
+    };
+
+    // Build improvements list, filtering out high-scoring dimensions (>= 70)
+    const improvements: ImprovementSuggestion[] = parsed.improvements
+      .filter((imp) => {
+        const dimKey = dimensionNameMap[imp.dimension];
+        if (!dimKey) return true; // Keep if dimension name not recognized
+        const score = parsed.dimensions[dimKey]?.score ?? 0;
+        return score < 70; // Only include dimensions with score < 70
+      })
+      .map((imp) => ({
+        dimension: imp.dimension,
+        priority: imp.priority,
+        suggestion: imp.suggestion,
+        example: imp.example,
+      }));
 
     // Create assessment
     const assessment = NoteAssessment.create({
