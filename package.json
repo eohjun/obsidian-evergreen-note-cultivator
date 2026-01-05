@@ -1,11 +1,12 @@
 {
   "name": "obsidian-evergreen-note-cultivator",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Guide note growth from seed to evergreen with AI-powered assessment and feedback",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
-    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production && cp src/styles.css styles.css",
+    "build:css": "cp src/styles.css styles.css",
     "typecheck": "tsc -noEmit -skipLibCheck"
   },
   "keywords": [

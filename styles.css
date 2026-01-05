@@ -224,19 +224,114 @@
   background: var(--color-red);
 }
 
-/* Recommendation */
+/* Recommendation - Inline Layout */
 .cultivator-recommendation {
   margin-top: 12px;
-  padding: 12px;
+  padding: 10px 12px;
   background: var(--background-primary);
   border-radius: 6px;
   border-left: 3px solid var(--interactive-accent);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.cultivator-recommendation p {
+.cultivator-recommendation-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.cultivator-recommendation-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.cultivator-recommendation-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--interactive-accent);
+}
+
+.cultivator-recommendation-match {
+  font-size: 11px;
+  color: var(--color-green);
+  font-weight: 500;
+  padding: 4px 8px;
+  background: rgba(var(--color-green-rgb), 0.1);
+  border-radius: 4px;
+}
+
+.cultivator-btn-update {
+  padding: 4px 10px;
+  font-size: 11px;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.cultivator-btn-update:hover {
+  background: var(--interactive-accent-hover);
+}
+
+/* Loading State */
+.cultivator-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  gap: 16px;
+  text-align: center;
+  background: var(--background-secondary);
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+.cultivator-spinner-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cultivator-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--text-muted);
+  border-top-color: var(--interactive-accent);
+  border-radius: 50%;
+  animation: cultivator-spin 0.8s linear infinite;
+}
+
+@keyframes cultivator-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.cultivator-loading-text {
   margin: 0;
   font-size: 13px;
-  color: var(--text-normal);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* Dynamic Content Area */
+.cultivator-dynamic-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 /* Growth Guide */
@@ -262,6 +357,101 @@
   margin: 0;
   font-size: 13px;
   color: var(--text-muted);
+}
+
+/* Improvements List */
+.cultivator-improvements {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cultivator-improvement-item {
+  padding: 14px;
+  background: var(--background-primary);
+  border-radius: 8px;
+  border-left: 3px solid var(--interactive-accent);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.cultivator-improvement-item:last-child {
+  border-bottom: none;
+}
+
+.cultivator-improvement-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  flex-wrap: wrap;
+}
+
+.cultivator-improvement-number {
+  width: 22px;
+  height: 22px;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.cultivator-improvement-dimension {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-normal);
+}
+
+.cultivator-improvement-priority {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.cultivator-priority-high {
+  background: rgba(var(--color-red-rgb), 0.15);
+  color: var(--color-red);
+}
+
+.cultivator-priority-medium {
+  background: rgba(var(--color-yellow-rgb), 0.15);
+  color: var(--color-yellow);
+}
+
+.cultivator-priority-low {
+  background: rgba(var(--color-green-rgb), 0.15);
+  color: var(--color-green);
+}
+
+.cultivator-improvement-suggestion {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  color: var(--text-normal);
+  line-height: 1.6;
+}
+
+.cultivator-improvement-example {
+  padding: 10px 12px;
+  background: var(--background-secondary);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-top: 8px;
+  border-left: 2px solid var(--color-yellow);
+}
+
+.cultivator-example-label {
+  font-weight: 600;
+  color: var(--text-normal);
 }
 
 /* ============================================
