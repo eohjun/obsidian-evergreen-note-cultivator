@@ -235,9 +235,10 @@ export class CultivatorView extends ItemView {
       return;
     }
 
-    try {
-      new Notice('노트 품질 평가 중...');
+    // Show loading state in sidebar
+    this.renderLoadingState();
 
+    try {
       const noteData = await this.buildNoteData(this.currentFile);
       const existingLinks = this.getExistingLinks(this.currentFile);
       const backlinks = this.getBacklinks(this.currentFile);
@@ -255,12 +256,24 @@ export class CultivatorView extends ItemView {
         await this.renderNoteInfo(this.currentFile);
         new Notice('✅ 평가 완료!');
       } else {
+        await this.renderNoteInfo(this.currentFile);
         new Notice(`❌ 평가 실패: ${result.error ?? '알 수 없는 오류'}`);
       }
     } catch (error) {
+      await this.renderNoteInfo(this.currentFile);
       const message = error instanceof Error ? error.message : '알 수 없는 오류';
       new Notice(`❌ 오류: ${message}`);
     }
+  }
+
+  private renderLoadingState(): void {
+    const container = this.containerEl.children[1] as HTMLElement;
+    container.empty();
+
+    const loadingEl = container.createDiv({ cls: 'cultivator-loading' });
+    loadingEl.createDiv({ cls: 'cultivator-spinner' });
+    loadingEl.createEl('p', { text: '노트 품질을 평가 중입니다...' });
+    loadingEl.createEl('p', { cls: 'cultivator-loading-hint', text: 'AI가 5개 차원에서 분석하고 있습니다' });
   }
 
   private renderAssessmentResults(result: AssessNoteQualityOutput): void {
@@ -327,9 +340,53 @@ export class CultivatorView extends ItemView {
     const guideEl = container.createDiv({ cls: 'cultivator-guide' });
     guideEl.createEl('h4', { text: '🌱 성장 가이드' });
 
-    const tipEl = guideEl.createDiv({ cls: 'cultivator-tip' });
-    tipEl.createEl('p', {
-      text: '품질 평가를 실행하면 다음 단계로 성장하기 위한 구체적인 가이드를 받을 수 있습니다.'
+    // Check if we have assessment results with improvements
+    if (this.lastAssessment?.assessment?.improvements && this.lastAssessment.assessment.improvements.length > 0) {
+      this.renderImprovementsList(guideEl, this.lastAssessment.assessment.improvements);
+    } else {
+      const tipEl = guideEl.createDiv({ cls: 'cultivator-tip' });
+      tipEl.createEl('p', {
+        text: '품질 평가를 실행하면 다음 단계로 성장하기 위한 구체적인 가이드를 받을 수 있습니다.'
+      });
+    }
+  }
+
+  private renderImprovementsList(container: HTMLElement, improvements: readonly {
+    dimension: string;
+    priority: 'high' | 'medium' | 'low';
+    suggestion: string;
+    example?: string;
+  }[]): void {
+    const listEl = container.createDiv({ cls: 'cultivator-improvements' });
+
+    improvements.forEach((imp, index) => {
+      const itemEl = listEl.createDiv({ cls: 'cultivator-improvement-item' });
+
+      // Priority indicator
+      const priorityIcon = imp.priority === 'high' ? '🔴' : imp.priority === 'medium' ? '🟡' : '🟢';
+      const priorityText = imp.priority === 'high' ? '높음' : imp.priority === 'medium' ? '보통' : '낮음';
+
+      // Header with dimension and priority
+      const headerEl = itemEl.createDiv({ cls: 'cultivator-improvement-header' });
+      headerEl.createEl('span', { cls: 'cultivator-improvement-number', text: `${index + 1}` });
+      headerEl.createEl('span', { cls: 'cultivator-improvement-dimension', text: imp.dimension });
+      headerEl.createEl('span', {
+        cls: `cultivator-improvement-priority cultivator-priority-${imp.priority}`,
+        text: `${priorityIcon} ${priorityText}`
+      });
+
+      // Suggestion
+      itemEl.createEl('p', {
+        cls: 'cultivator-improvement-suggestion',
+        text: imp.suggestion
+      });
+
+      // Example if available
+      if (imp.example) {
+        const exampleEl = itemEl.createDiv({ cls: 'cultivator-improvement-example' });
+        exampleEl.createEl('span', { cls: 'cultivator-example-label', text: '💡 예시: ' });
+        exampleEl.createEl('span', { text: imp.example });
+      }
     });
   }
 }
