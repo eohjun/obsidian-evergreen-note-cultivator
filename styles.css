@@ -11,6 +11,20 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Enable text selection for all text content */
+.cultivator-view-container p,
+.cultivator-view-container span,
+.cultivator-view-container h3,
+.cultivator-view-container h4,
+.cultivator-view-container .cultivator-improvement-suggestion,
+.cultivator-view-container .cultivator-tip {
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
 }
 
 /* Empty State */
