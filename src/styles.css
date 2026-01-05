@@ -888,3 +888,55 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================
+   Assessment Persistence (Save/Load)
+   ============================================ */
+
+/* Loaded from note indicator */
+.cultivator-loaded-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  background: var(--background-modifier-success);
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.cultivator-loaded-indicator span {
+  font-size: 12px;
+  color: var(--text-normal);
+  font-weight: 500;
+}
+
+/* Save actions section */
+.cultivator-save-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+/* Save button */
+.cultivator-btn-save {
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cultivator-btn-save:hover {
+  background: var(--interactive-accent-hover);
+  transform: translateY(-1px);
+}
+
+.cultivator-btn-save:active {
+  transform: translateY(0);
+}

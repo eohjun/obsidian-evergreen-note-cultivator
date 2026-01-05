@@ -5,16 +5,22 @@
 
 import { ItemView, WorkspaceLeaf, TFile, Notice } from 'obsidian';
 import type EvergreenNoteCultivatorPlugin from '../main';
-import { MaturityLevel, type NoteData } from '../core/domain';
+import { MaturityLevel, QualityScore, NoteAssessment, type NoteData } from '../core/domain';
 import { AssessNoteQualityUseCase, UpdateMaturityUseCase, type AssessNoteQualityOutput } from '../core/application';
 
 export const VIEW_TYPE_CULTIVATOR = 'evergreen-cultivator-view';
+
+// Callout identifier for saved assessments
+const ASSESSMENT_CALLOUT_TYPE = 'assessment';
+const ASSESSMENT_CALLOUT_REGEX = /^>\s*\[!assessment\][+-]?\s*.*/m;
+const ASSESSMENT_CALLOUT_BLOCK_REGEX = /(^>\s*\[!assessment\][+-]?\s*.*\n(?:>.*\n?)*)/m;
 
 export class CultivatorView extends ItemView {
   private plugin: EvergreenNoteCultivatorPlugin;
   private currentFile: TFile | null = null;
   private lastAssessment: AssessNoteQualityOutput | null = null;
   private dynamicContentEl: HTMLElement | null = null;
+  private isLoadedFromNote: boolean = false;
 
   constructor(leaf: WorkspaceLeaf, plugin: EvergreenNoteCultivatorPlugin) {
     super(leaf);
@@ -70,6 +76,7 @@ export class CultivatorView extends ItemView {
   private async onFileOpen(file: TFile | null): Promise<void> {
     this.currentFile = file;
     this.lastAssessment = null;
+    this.isLoadedFromNote = false;
 
     if (!file) {
       this.renderEmptyState();
@@ -80,6 +87,9 @@ export class CultivatorView extends ItemView {
       this.renderNonMarkdownState();
       return;
     }
+
+    // Try to load existing assessment from note
+    await this.loadAssessmentFromNote(file);
 
     await this.renderNoteInfo(file);
   }
@@ -169,8 +179,22 @@ export class CultivatorView extends ItemView {
 
     // Assessment results (if available)
     if (this.lastAssessment?.assessment) {
+      // Show "loaded from note" indicator if applicable
+      if (this.isLoadedFromNote) {
+        const loadedIndicator = this.dynamicContentEl.createDiv({ cls: 'cultivator-loaded-indicator' });
+        loadedIndicator.createEl('span', { text: '📂 저장된 평가 불러옴' });
+      }
+
       this.renderAssessmentResults(this.dynamicContentEl, this.lastAssessment);
       this.renderGrowthGuideSection(this.dynamicContentEl);
+
+      // Save button
+      const saveActionsEl = this.dynamicContentEl.createDiv({ cls: 'cultivator-save-actions' });
+      const saveBtn = saveActionsEl.createEl('button', {
+        cls: 'cultivator-btn cultivator-btn-save',
+        text: '📝 노트에 저장'
+      });
+      saveBtn.addEventListener('click', () => this.saveAssessmentToNote());
     } else {
       // Default hint
       const guideEl = this.dynamicContentEl.createDiv({ cls: 'cultivator-guide' });
@@ -479,5 +503,179 @@ export class CultivatorView extends ItemView {
         exampleEl.createEl('span', { text: imp.example });
       }
     });
+  }
+
+  // ============================================
+  // Assessment Persistence (Save/Load from Note)
+  // ============================================
+
+  private generateAssessmentCallout(): string {
+    if (!this.lastAssessment?.assessment) return '';
+
+    const assessment = this.lastAssessment.assessment;
+    const qualityScore = assessment.qualityScore;
+    const date = new Date().toISOString().split('T')[0];
+
+    const lines: string[] = [];
+    lines.push(`> [!${ASSESSMENT_CALLOUT_TYPE}]- 📊 품질 평가 결과 (${date})`);
+    lines.push(`> **총점**: ${qualityScore.totalScore}점 (${qualityScore.getGrade()})`);
+
+    if (assessment.recommendedMaturity) {
+      lines.push(`> **추천 성숙도**: ${assessment.recommendedMaturity.icon} ${assessment.recommendedMaturity.displayName}`);
+    }
+
+    lines.push(`>`);
+    lines.push(`> | 차원 | 점수 | 피드백 |`);
+    lines.push(`> |------|------|--------|`);
+
+    assessment.improvements.forEach(imp => {
+      // Escape pipe characters in feedback
+      const feedback = imp.suggestion.replace(/\|/g, '\\|').replace(/\n/g, ' ');
+      const truncatedFeedback = feedback.length > 100 ? feedback.substring(0, 100) + '...' : feedback;
+      lines.push(`> | ${imp.dimension} | ${this.getScoreForDimension(imp.dimension)}점 | ${truncatedFeedback} |`);
+    });
+
+    return lines.join('\n');
+  }
+
+  private getScoreForDimension(dimensionName: string): number {
+    if (!this.lastAssessment?.assessment) return 0;
+
+    const qualityScore = this.lastAssessment.assessment.qualityScore;
+    const dimensions = qualityScore.getAllDimensions();
+
+    const dimensionMap: Record<string, string> = {
+      '원자성': '원자성',
+      '연결성': '연결성',
+      '명확성': '명확성',
+      '근거': '근거',
+      '독창성': '독창성',
+    };
+
+    const dim = dimensions.find(d => d.displayName === dimensionName);
+    return dim?.score ?? 0;
+  }
+
+  private async saveAssessmentToNote(): Promise<void> {
+    if (!this.currentFile || !this.lastAssessment?.assessment) {
+      new Notice('저장할 평가 결과가 없습니다.');
+      return;
+    }
+
+    try {
+      const callout = this.generateAssessmentCallout();
+      if (!callout) {
+        new Notice('콜아웃 생성에 실패했습니다.');
+        return;
+      }
+
+      let content = await this.app.vault.read(this.currentFile);
+
+      // Check if assessment callout already exists
+      if (ASSESSMENT_CALLOUT_BLOCK_REGEX.test(content)) {
+        // Replace existing callout
+        content = content.replace(ASSESSMENT_CALLOUT_BLOCK_REGEX, callout);
+        new Notice('✅ 평가 결과가 업데이트되었습니다.');
+      } else {
+        // Append to end of note
+        content = content.replace(/\s+$/, '') + '\n\n' + callout + '\n';
+        new Notice('✅ 평가 결과가 노트에 저장되었습니다.');
+      }
+
+      await this.app.vault.modify(this.currentFile, content);
+      this.isLoadedFromNote = true;
+
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '알 수 없는 오류';
+      new Notice(`❌ 저장 실패: ${message}`);
+    }
+  }
+
+  private async loadAssessmentFromNote(file: TFile): Promise<void> {
+    try {
+      const content = await this.app.vault.cachedRead(file);
+
+      // Check if assessment callout exists
+      const match = content.match(ASSESSMENT_CALLOUT_BLOCK_REGEX);
+      if (!match) return;
+
+      const calloutBlock = match[1];
+      const parsed = this.parseAssessmentCallout(calloutBlock);
+
+      if (parsed) {
+        this.lastAssessment = parsed;
+        this.isLoadedFromNote = true;
+      }
+    } catch (error) {
+      console.error('Failed to load assessment from note:', error);
+    }
+  }
+
+  private parseAssessmentCallout(calloutBlock: string): AssessNoteQualityOutput | null {
+    try {
+      const lines = calloutBlock.split('\n').map(l => l.replace(/^>\s?/, ''));
+
+      // Parse total score from line like "**총점**: 72점 (양호)"
+      const totalScoreLine = lines.find(l => l.includes('**총점**'));
+      const totalScoreMatch = totalScoreLine?.match(/(\d+)점/);
+      const totalScore = totalScoreMatch ? parseInt(totalScoreMatch[1]) : 0;
+
+      // Parse recommended maturity
+      const maturityLine = lines.find(l => l.includes('**추천 성숙도**'));
+      let recommendedMaturity: MaturityLevel | null = null;
+      if (maturityLine) {
+        if (maturityLine.includes('Evergreen')) recommendedMaturity = MaturityLevel.create('evergreen');
+        else if (maturityLine.includes('Tree')) recommendedMaturity = MaturityLevel.create('tree');
+        else if (maturityLine.includes('Sprout')) recommendedMaturity = MaturityLevel.create('sprout');
+        else recommendedMaturity = MaturityLevel.create('seed');
+      }
+
+      // Parse dimension scores from table
+      const tableLines = lines.filter(l => l.startsWith('|') && !l.includes('---') && !l.includes('차원'));
+      const improvements: { dimension: string; priority: 'high' | 'medium' | 'low'; suggestion: string }[] = [];
+      const dimensionScores: Record<string, { score: number; feedback: string }> = {};
+
+      tableLines.forEach(line => {
+        const cells = line.split('|').map(c => c.trim()).filter(c => c);
+        if (cells.length >= 3) {
+          const dimension = cells[0];
+          const scoreMatch = cells[1].match(/(\d+)/);
+          const score = scoreMatch ? parseInt(scoreMatch[1]) : 0;
+          const feedback = cells[2].replace(/\\\|/g, '|');
+
+          dimensionScores[dimension] = { score, feedback };
+
+          const priority: 'high' | 'medium' | 'low' =
+            score >= 80 ? 'low' : score >= 60 ? 'medium' : 'high';
+
+          improvements.push({ dimension, priority, suggestion: feedback });
+        }
+      });
+
+      // Build a minimal assessment object for display
+      const qualityScore = QualityScore.fromScores({
+        atomicity: dimensionScores['원자성'] || { score: 0, feedback: '' },
+        connectivity: dimensionScores['연결성'] || { score: 0, feedback: '' },
+        clarity: dimensionScores['명확성'] || { score: 0, feedback: '' },
+        evidence: dimensionScores['근거'] || { score: 0, feedback: '' },
+        originality: dimensionScores['독창성'] || { score: 0, feedback: '' },
+      });
+
+      const currentMaturity = MaturityLevel.default();
+
+      const assessment = NoteAssessment.create({
+        noteId: this.currentFile?.path ?? '',
+        notePath: this.currentFile?.path ?? '',
+        qualityScore,
+        currentMaturity,
+        improvements,
+        splitSuggestion: null,
+      });
+
+      return { assessment };
+    } catch (error) {
+      console.error('Failed to parse assessment callout:', error);
+      return null;
+    }
   }
 }
