@@ -6,7 +6,7 @@
 import { ItemView, WorkspaceLeaf, TFile, Notice } from 'obsidian';
 import type EvergreenNoteCultivatorPlugin from '../main';
 import { MaturityLevel, type NoteData } from '../core/domain';
-import { AssessNoteQualityUseCase, type AssessNoteQualityOutput } from '../core/application';
+import { AssessNoteQualityUseCase, UpdateMaturityUseCase, type AssessNoteQualityOutput } from '../core/application';
 
 export const VIEW_TYPE_CULTIVATOR = 'evergreen-cultivator-view';
 
@@ -14,6 +14,7 @@ export class CultivatorView extends ItemView {
   private plugin: EvergreenNoteCultivatorPlugin;
   private currentFile: TFile | null = null;
   private lastAssessment: AssessNoteQualityOutput | null = null;
+  private dynamicContentEl: HTMLElement | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: EvergreenNoteCultivatorPlugin) {
     super(leaf);
@@ -96,6 +97,8 @@ export class CultivatorView extends ItemView {
     const container = this.containerEl.children[1] as HTMLElement;
     container.empty();
 
+    // === STATIC SECTION (stays during loading) ===
+
     // Header with maturity
     const headerEl = container.createDiv({ cls: 'cultivator-header' });
 
@@ -146,13 +149,48 @@ export class CultivatorView extends ItemView {
     });
     assessBtn.addEventListener('click', () => this.runAssessment());
 
-    // Assessment results (if available)
-    if (this.lastAssessment) {
-      this.renderAssessmentResults(this.lastAssessment);
-    }
+    // === DYNAMIC SECTION (changes during loading/results) ===
+    this.dynamicContentEl = container.createDiv({ cls: 'cultivator-dynamic-content' });
+    this.renderDynamicContent();
+  }
 
-    // Growth guide section
-    this.renderGrowthGuideSection();
+  private renderDynamicContent(): void {
+    if (!this.dynamicContentEl) return;
+    this.dynamicContentEl.empty();
+
+    // Assessment results (if available)
+    if (this.lastAssessment?.assessment) {
+      this.renderAssessmentResults(this.dynamicContentEl, this.lastAssessment);
+      this.renderGrowthGuideSection(this.dynamicContentEl);
+    } else {
+      // Default hint
+      const guideEl = this.dynamicContentEl.createDiv({ cls: 'cultivator-guide' });
+      guideEl.createEl('h4', { text: '🌱 성장 가이드' });
+      const tipEl = guideEl.createDiv({ cls: 'cultivator-tip' });
+      tipEl.createEl('p', {
+        text: '품질 평가를 실행하면 다음 단계로 성장하기 위한 구체적인 가이드를 받을 수 있습니다.'
+      });
+    }
+  }
+
+  private renderLoadingInDynamicArea(): void {
+    if (!this.dynamicContentEl) return;
+    this.dynamicContentEl.empty();
+
+    const loadingEl = this.dynamicContentEl.createDiv({ cls: 'cultivator-loading' });
+
+    // Spinner element
+    const spinnerEl = loadingEl.createDiv({ cls: 'cultivator-spinner' });
+    spinnerEl.setAttribute('aria-label', '로딩 중');
+
+    loadingEl.createEl('p', {
+      cls: 'cultivator-loading-text',
+      text: '노트 품질을 평가 중입니다...'
+    });
+    loadingEl.createEl('p', {
+      cls: 'cultivator-loading-hint',
+      text: 'AI가 5개 차원에서 분석하고 있습니다'
+    });
   }
 
   private renderStat(container: HTMLElement, icon: string, label: string, value: string): void {
@@ -235,8 +273,8 @@ export class CultivatorView extends ItemView {
       return;
     }
 
-    // Show loading state in sidebar
-    this.renderLoadingState();
+    // Show loading state ONLY in dynamic area (keeps header/stats visible)
+    this.renderLoadingInDynamicArea();
 
     try {
       const noteData = await this.buildNoteData(this.currentFile);
@@ -253,31 +291,20 @@ export class CultivatorView extends ItemView {
 
       if (result.assessment) {
         this.lastAssessment = result;
-        await this.renderNoteInfo(this.currentFile);
+        this.renderDynamicContent();
         new Notice('✅ 평가 완료!');
       } else {
-        await this.renderNoteInfo(this.currentFile);
+        this.renderDynamicContent();
         new Notice(`❌ 평가 실패: ${result.error ?? '알 수 없는 오류'}`);
       }
     } catch (error) {
-      await this.renderNoteInfo(this.currentFile);
+      this.renderDynamicContent();
       const message = error instanceof Error ? error.message : '알 수 없는 오류';
       new Notice(`❌ 오류: ${message}`);
     }
   }
 
-  private renderLoadingState(): void {
-    const container = this.containerEl.children[1] as HTMLElement;
-    container.empty();
-
-    const loadingEl = container.createDiv({ cls: 'cultivator-loading' });
-    loadingEl.createDiv({ cls: 'cultivator-spinner' });
-    loadingEl.createEl('p', { text: '노트 품질을 평가 중입니다...' });
-    loadingEl.createEl('p', { cls: 'cultivator-loading-hint', text: 'AI가 5개 차원에서 분석하고 있습니다' });
-  }
-
-  private renderAssessmentResults(result: AssessNoteQualityOutput): void {
-    const container = this.containerEl.children[1] as HTMLElement;
+  private renderAssessmentResults(container: HTMLElement, result: AssessNoteQualityOutput): void {
     if (!result.assessment) return;
 
     const resultsEl = container.createDiv({ cls: 'cultivator-results' });
@@ -298,13 +325,70 @@ export class CultivatorView extends ItemView {
       this.renderDimensionBar(dimensionsEl, dim);
     });
 
-    // Recommended maturity
+    // Recommended maturity with update button
     const recommendedMaturity = assessment.recommendedMaturity;
     if (recommendedMaturity) {
       const recEl = resultsEl.createDiv({ cls: 'cultivator-recommendation' });
-      recEl.createEl('p', {
-        text: `추천 성숙도: ${recommendedMaturity.icon} ${recommendedMaturity.displayName}`
+
+      const recTextEl = recEl.createDiv({ cls: 'cultivator-recommendation-text' });
+      recTextEl.createEl('span', { text: '추천 성숙도: ' });
+      recTextEl.createEl('span', {
+        cls: 'cultivator-recommendation-value',
+        text: `${recommendedMaturity.icon} ${recommendedMaturity.displayName}`
       });
+
+      // Check if current maturity is different from recommended
+      const cache = this.app.metadataCache.getFileCache(this.currentFile!);
+      const currentMaturityValue = cache?.frontmatter?.[this.plugin.settings.frontmatterKey];
+      const currentMaturity = currentMaturityValue
+        ? MaturityLevel.fromFrontmatter(currentMaturityValue)
+        : MaturityLevel.default();
+
+      if (currentMaturity.level !== recommendedMaturity.level) {
+        const updateBtn = recEl.createEl('button', {
+          cls: 'cultivator-btn cultivator-btn-update',
+          text: '이 성숙도로 업데이트'
+        });
+        updateBtn.addEventListener('click', () => this.updateMaturityToRecommended(recommendedMaturity));
+      } else {
+        recEl.createEl('span', {
+          cls: 'cultivator-recommendation-match',
+          text: '✓ 현재 성숙도와 일치'
+        });
+      }
+    }
+  }
+
+  private async updateMaturityToRecommended(targetMaturity: MaturityLevel): Promise<void> {
+    if (!this.currentFile) return;
+
+    try {
+      // Get current maturity
+      const cache = this.app.metadataCache.getFileCache(this.currentFile);
+      const currentMaturityValue = cache?.frontmatter?.[this.plugin.settings.frontmatterKey];
+      const currentMaturity = currentMaturityValue
+        ? MaturityLevel.fromFrontmatter(currentMaturityValue)
+        : MaturityLevel.default();
+
+      const useCase = new UpdateMaturityUseCase(this.plugin.getNoteRepository());
+
+      const result = await useCase.execute({
+        noteId: this.currentFile.path,
+        currentMaturity: currentMaturity,
+        targetMaturity: targetMaturity,
+        forceUpdate: true, // Allow any level change based on recommendation
+      });
+
+      if (result.success) {
+        new Notice(`✅ 성숙도가 ${targetMaturity.icon} ${targetMaturity.displayName}(으)로 업데이트되었습니다.`);
+        // Re-render the entire view to reflect the change
+        await this.renderNoteInfo(this.currentFile);
+      } else {
+        new Notice(`❌ 업데이트 실패: ${result.error ?? '알 수 없는 오류'}`);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '알 수 없는 오류';
+      new Notice(`❌ 오류: ${message}`);
     }
   }
 
@@ -334,9 +418,7 @@ export class CultivatorView extends ItemView {
     }
   }
 
-  private renderGrowthGuideSection(): void {
-    const container = this.containerEl.children[1] as HTMLElement;
-
+  private renderGrowthGuideSection(container: HTMLElement): void {
     const guideEl = container.createDiv({ cls: 'cultivator-guide' });
     guideEl.createEl('h4', { text: '🌱 성장 가이드' });
 
@@ -346,7 +428,7 @@ export class CultivatorView extends ItemView {
     } else {
       const tipEl = guideEl.createDiv({ cls: 'cultivator-tip' });
       tipEl.createEl('p', {
-        text: '품질 평가를 실행하면 다음 단계로 성장하기 위한 구체적인 가이드를 받을 수 있습니다.'
+        text: '개선 제안이 없습니다. 훌륭한 노트입니다!'
       });
     }
   }
