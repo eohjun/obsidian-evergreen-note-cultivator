@@ -45,6 +45,15 @@ export class CultivatorView extends ItemView {
       })
     );
 
+    // Register metadata change listener (for frontmatter updates)
+    this.registerEvent(
+      this.app.metadataCache.on('changed', (file) => {
+        if (this.currentFile && file.path === this.currentFile.path) {
+          this.renderNoteInfo(this.currentFile);
+        }
+      })
+    );
+
     // Initial render
     const activeFile = this.app.workspace.getActiveFile();
     if (activeFile) {
