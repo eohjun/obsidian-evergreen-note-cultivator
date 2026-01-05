@@ -235,7 +235,7 @@ export class AssessNoteQualityUseCase {
       note.metadata.growthStage as string | undefined
     );
 
-    // Build improvements directly from dimension feedback (score < 80)
+    // Build improvements from all dimension feedback (show all 5)
     const dimensionConfig: {
       key: keyof typeof parsed.dimensions;
       name: string;
@@ -247,18 +247,16 @@ export class AssessNoteQualityUseCase {
       { key: 'originality', name: '독창성' },
     ];
 
-    const improvements: ImprovementSuggestion[] = dimensionConfig
-      .filter(({ key }) => parsed.dimensions[key].score < 80)
-      .map(({ key, name }) => {
-        const dim = parsed.dimensions[key];
-        const priority: 'high' | 'medium' | 'low' =
-          dim.score < 40 ? 'high' : dim.score < 60 ? 'medium' : 'low';
-        return {
-          dimension: name,
-          priority,
-          suggestion: dim.feedback,
-        };
-      });
+    const improvements: ImprovementSuggestion[] = dimensionConfig.map(({ key, name }) => {
+      const dim = parsed.dimensions[key];
+      const priority: 'high' | 'medium' | 'low' =
+        dim.score >= 80 ? 'low' : dim.score >= 60 ? 'medium' : 'high';
+      return {
+        dimension: name,
+        priority,
+        suggestion: dim.feedback,
+      };
+    });
 
     // Create assessment
     const assessment = NoteAssessment.create({
