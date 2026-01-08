@@ -5,7 +5,7 @@
  * INoteRepository 인터페이스를 구현하여 Domain Layer와 Obsidian 연결
  */
 
-import type { App, TFile, CachedMetadata } from 'obsidian';
+import { normalizePath, type App, type TFile, type CachedMetadata } from 'obsidian';
 import type {
   INoteRepository,
   NoteData,
@@ -31,14 +31,15 @@ export class ObsidianNoteRepository implements INoteRepository {
   }
 
   /**
-   * 노트 경로로 조회
+   * 노트 경로로 조회 (cross-platform safe)
    */
   async getByPath(path: string): Promise<NoteData | null> {
-    const file = this.app.vault.getAbstractFileByPath(path);
+    const normalizedPath = normalizePath(path);
+    const file = this.app.vault.getAbstractFileByPath(normalizedPath);
     if (!(file instanceof this.app.vault.adapter.constructor)) {
       // TFile check - use alternative approach
       const files = this.app.vault.getMarkdownFiles();
-      const targetFile = files.find(f => f.path === path);
+      const targetFile = files.find(f => f.path === normalizedPath);
       if (!targetFile) return null;
       return this.fileToNoteData(targetFile);
     }
@@ -184,9 +185,11 @@ export class ObsidianNoteRepository implements INoteRepository {
   }
 
   /**
-   * 새 노트 생성
+   * 새 노트 생성 (cross-platform safe)
    */
   async createNote(path: string, content: string, metadata?: NoteMetadata): Promise<NoteData> {
+    const normalizedPath = normalizePath(path);
+
     // Frontmatter 포함한 내용 생성
     let fullContent = content;
     if (metadata) {
@@ -194,18 +197,40 @@ export class ObsidianNoteRepository implements INoteRepository {
       fullContent = `---\n${frontmatter}---\n\n${content}`;
     }
 
-    const file = await this.app.vault.create(path, fullContent);
-    const noteData = await this.fileToNoteData(file);
-    if (!noteData) throw new Error(`Failed to create note: ${path}`);
-    return noteData;
+    try {
+      const file = await this.app.vault.create(normalizedPath, fullContent);
+      const noteData = await this.fileToNoteData(file);
+      if (!noteData) throw new Error(`Failed to create note: ${normalizedPath}`);
+      return noteData;
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      // File exists from sync - use adapter.write fallback
+      if (msg.toLowerCase().includes('already exists')) {
+        await this.app.vault.adapter.write(normalizedPath, fullContent);
+        const file = this.getFileByPath(normalizedPath);
+        if (!file) throw new Error(`Failed to create note: ${normalizedPath}`);
+        const noteData = await this.fileToNoteData(file);
+        if (!noteData) throw new Error(`Failed to create note: ${normalizedPath}`);
+        return noteData;
+      }
+      throw error;
+    }
   }
 
   /**
-   * 노트 존재 여부 확인
+   * 노트 존재 여부 확인 (cross-platform safe with adapter fallback)
    */
   async exists(path: string): Promise<boolean> {
-    const file = this.app.vault.getAbstractFileByPath(path);
-    return file !== null;
+    const normalizedPath = normalizePath(path);
+    const file = this.app.vault.getAbstractFileByPath(normalizedPath);
+    if (file !== null) return true;
+
+    // Adapter fallback for sync scenarios
+    try {
+      return await this.app.vault.adapter.exists(normalizedPath);
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -225,11 +250,12 @@ export class ObsidianNoteRepository implements INoteRepository {
   // ============ Private Helpers ============
 
   /**
-   * 경로로 파일 가져오기
+   * 경로로 파일 가져오기 (cross-platform safe)
    */
   private getFileByPath(path: string): TFile | null {
+    const normalizedPath = normalizePath(path);
     const files = this.app.vault.getMarkdownFiles();
-    return files.find(f => f.path === path) ?? null;
+    return files.find(f => f.path === normalizedPath) ?? null;
   }
 
   /**
