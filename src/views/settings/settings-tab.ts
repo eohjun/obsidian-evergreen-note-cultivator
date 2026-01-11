@@ -29,12 +29,12 @@ export class CultivatorSettingTab extends PluginSettingTab {
   }
 
   private renderAISettings(containerEl: HTMLElement): void {
-    containerEl.createEl('h2', { text: 'AI 설정' });
+    containerEl.createEl('h2', { text: 'AI Settings' });
 
     // Provider Selection
     new Setting(containerEl)
-      .setName('AI 프로바이더')
-      .setDesc('사용할 AI 서비스를 선택하세요')
+      .setName('AI Provider')
+      .setDesc('Select the AI service to use')
       .addDropdown((dropdown) => {
         Object.entries(AI_PROVIDERS).forEach(([key, config]) => {
           dropdown.addOption(key, config.displayName);
@@ -51,11 +51,11 @@ export class CultivatorSettingTab extends PluginSettingTab {
     // API Key
     const currentProvider = this.plugin.settings.ai.provider;
     new Setting(containerEl)
-      .setName(`${AI_PROVIDERS[currentProvider].displayName} API 키`)
-      .setDesc('API 키를 입력하세요')
+      .setName(`${AI_PROVIDERS[currentProvider].displayName} API Key`)
+      .setDesc('Enter your API key')
       .addText((text) => {
         text
-          .setPlaceholder('API 키 입력')
+          .setPlaceholder('Enter API key')
           .setValue(this.plugin.settings.ai.apiKeys[currentProvider] ?? '')
           .onChange(async (value) => {
             this.plugin.settings.ai.apiKeys[currentProvider] = value;
@@ -65,45 +65,45 @@ export class CultivatorSettingTab extends PluginSettingTab {
       })
       .addButton((button) => {
         button
-          .setButtonText('테스트')
+          .setButtonText('Test')
           .onClick(async () => {
             const provider = this.plugin.getCurrentProvider();
             const apiKey = this.plugin.settings.ai.apiKeys[currentProvider];
 
             if (!provider) {
-              new Notice('프로바이더를 찾을 수 없습니다.');
+              new Notice('Provider not found.');
               return;
             }
 
             if (!apiKey) {
-              new Notice('API 키를 먼저 입력해주세요.');
+              new Notice('Please enter an API key first.');
               return;
             }
 
             button.setDisabled(true);
-            button.setButtonText('테스트 중...');
+            button.setButtonText('Testing...');
 
             try {
               const isValid = await provider.testApiKey(apiKey);
               if (isValid) {
-                new Notice('✅ API 키가 유효합니다!');
+                new Notice('✅ API key is valid!');
               } else {
-                new Notice('❌ API 키가 유효하지 않습니다.');
+                new Notice('❌ API key is invalid.');
               }
             } catch (error) {
-              const message = error instanceof Error ? error.message : '알 수 없는 오류';
-              new Notice(`❌ 테스트 실패: ${message}`);
+              const message = error instanceof Error ? error.message : 'Unknown error';
+              new Notice(`❌ Test failed: ${message}`);
             } finally {
               button.setDisabled(false);
-              button.setButtonText('테스트');
+              button.setButtonText('Test');
             }
           });
       });
 
     // Model Selection
     new Setting(containerEl)
-      .setName('모델')
-      .setDesc('사용할 모델을 선택하세요')
+      .setName('Model')
+      .setDesc('Select the model to use')
       .addDropdown((dropdown) => {
         this.modelDropdown = dropdown;
         this.populateModelDropdown(dropdown, currentProvider);
@@ -119,11 +119,11 @@ export class CultivatorSettingTab extends PluginSettingTab {
 
     // Budget Limit
     new Setting(containerEl)
-      .setName('예산 한도 (USD)')
-      .setDesc('월간 API 사용 예산 한도를 설정하세요 (선택 사항)')
+      .setName('Budget Limit (USD)')
+      .setDesc('Set monthly API usage budget limit (optional)')
       .addText((text) => {
         text
-          .setPlaceholder('예: 10.00')
+          .setPlaceholder('e.g., 10.00')
           .setValue(
             this.plugin.settings.ai.budgetLimit?.toString() ?? ''
           )
@@ -138,11 +138,11 @@ export class CultivatorSettingTab extends PluginSettingTab {
   }
 
   private renderDisplaySettings(containerEl: HTMLElement): void {
-    containerEl.createEl('h2', { text: '표시 설정' });
+    containerEl.createEl('h2', { text: 'Display Settings' });
 
     new Setting(containerEl)
-      .setName('탐색기에 성숙도 표시')
-      .setDesc('파일 탐색기에서 노트 성숙도 아이콘을 표시합니다')
+      .setName('Show maturity in explorer')
+      .setDesc('Display note maturity icons in file explorer')
       .addToggle((toggle) => {
         toggle
           .setValue(this.plugin.settings.display.showMaturityInExplorer)
@@ -153,8 +153,8 @@ export class CultivatorSettingTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName('사이드바에 점수 표시')
-      .setDesc('사이드바에서 품질 점수를 표시합니다')
+      .setName('Show score in sidebar')
+      .setDesc('Display quality score in sidebar')
       .addToggle((toggle) => {
         toggle
           .setValue(this.plugin.settings.display.showScoreInSidebar)
@@ -165,8 +165,8 @@ export class CultivatorSettingTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName('시작 시 사이드바 자동 열기')
-      .setDesc('플러그인 로드 시 사이드바를 자동으로 엽니다')
+      .setName('Auto-open sidebar on startup')
+      .setDesc('Automatically open sidebar when plugin loads')
       .addToggle((toggle) => {
         toggle
           .setValue(this.plugin.settings.display.autoOpenSidebar)
@@ -178,11 +178,11 @@ export class CultivatorSettingTab extends PluginSettingTab {
   }
 
   private renderAssessmentSettings(containerEl: HTMLElement): void {
-    containerEl.createEl('h2', { text: '평가 설정' });
+    containerEl.createEl('h2', { text: 'Assessment Settings' });
 
     new Setting(containerEl)
-      .setName('노트 열기 시 자동 평가')
-      .setDesc('노트를 열 때 자동으로 품질 평가를 실행합니다')
+      .setName('Auto-assess on note open')
+      .setDesc('Automatically run quality assessment when opening a note')
       .addToggle((toggle) => {
         toggle
           .setValue(this.plugin.settings.assessment.autoAssessOnOpen)
@@ -193,8 +193,8 @@ export class CultivatorSettingTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName('상세 피드백 표시')
-      .setDesc('각 평가 차원에 대한 상세 피드백을 표시합니다')
+      .setName('Show detailed feedback')
+      .setDesc('Display detailed feedback for each assessment dimension')
       .addToggle((toggle) => {
         toggle
           .setValue(this.plugin.settings.assessment.showDetailedFeedback)
@@ -205,8 +205,8 @@ export class CultivatorSettingTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName('분리 제안 활성화')
-      .setDesc('원자성이 낮은 노트에 대해 분리 제안을 표시합니다')
+      .setName('Enable split suggestions')
+      .setDesc('Show split suggestions for notes with low atomicity')
       .addToggle((toggle) => {
         toggle
           .setValue(this.plugin.settings.assessment.enableSplitSuggestions)
@@ -217,8 +217,8 @@ export class CultivatorSettingTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName('연결 제안 활성화')
-      .setDesc('다른 노트와의 연결 제안을 표시합니다')
+      .setName('Enable connection suggestions')
+      .setDesc('Show suggestions for connections to other notes')
       .addToggle((toggle) => {
         toggle
           .setValue(this.plugin.settings.assessment.enableConnectionSuggestions)
@@ -230,11 +230,11 @@ export class CultivatorSettingTab extends PluginSettingTab {
   }
 
   private renderAdvancedSettings(containerEl: HTMLElement): void {
-    containerEl.createEl('h2', { text: '고급 설정' });
+    containerEl.createEl('h2', { text: 'Advanced Settings' });
 
     new Setting(containerEl)
-      .setName('Frontmatter 키')
-      .setDesc('성숙도를 저장할 frontmatter 키 이름')
+      .setName('Frontmatter key')
+      .setDesc('Frontmatter key name to store maturity level')
       .addText((text) => {
         text
           .setPlaceholder('growth-stage')
@@ -246,8 +246,8 @@ export class CultivatorSettingTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName('최대 토큰 수')
-      .setDesc('AI 응답의 최대 토큰 수')
+      .setName('Max tokens')
+      .setDesc('Maximum tokens for AI response')
       .addText((text) => {
         text
           .setPlaceholder('4096')
@@ -263,7 +263,7 @@ export class CultivatorSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Temperature')
-      .setDesc('AI 응답의 창의성 수준 (0.0 - 1.0)')
+      .setDesc('AI response creativity level (0.0 - 1.0)')
       .addSlider((slider) => {
         slider
           .setLimits(0, 1, 0.1)

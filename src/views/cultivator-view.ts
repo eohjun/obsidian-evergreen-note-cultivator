@@ -1,6 +1,6 @@
 /**
  * Cultivator View - Sidebar View
- * 노트 성숙도와 품질 정보를 표시하는 사이드바 뷰
+ * Sidebar view displaying note maturity and quality information
  */
 
 import { ItemView, WorkspaceLeaf, TFile, Notice } from 'obsidian';
@@ -100,7 +100,7 @@ export class CultivatorView extends ItemView {
 
     const emptyEl = container.createDiv({ cls: 'cultivator-empty' });
     emptyEl.createEl('div', { cls: 'cultivator-icon', text: '🌱' });
-    emptyEl.createEl('p', { text: '노트를 열어 성장 상태를 확인하세요' });
+    emptyEl.createEl('p', { text: 'Open a note to check its growth status' });
   }
 
   private renderNonMarkdownState(): void {
@@ -109,7 +109,7 @@ export class CultivatorView extends ItemView {
 
     const emptyEl = container.createDiv({ cls: 'cultivator-empty' });
     emptyEl.createEl('div', { cls: 'cultivator-icon', text: '📄' });
-    emptyEl.createEl('p', { text: '마크다운 노트에서만 사용 가능합니다' });
+    emptyEl.createEl('p', { text: 'Only available for markdown notes' });
   }
 
   private async renderNoteInfo(file: TFile): Promise<void> {
@@ -155,16 +155,16 @@ export class CultivatorView extends ItemView {
     const linkCount = cache?.links?.length ?? 0;
     const tagCount = this.countTags(cache);
 
-    this.renderStat(statsEl, '📝', '단어 수', wordCount.toString());
-    this.renderStat(statsEl, '🔗', '링크', linkCount.toString());
-    this.renderStat(statsEl, '🏷️', '태그', tagCount.toString());
+    this.renderStat(statsEl, '📝', 'Words', wordCount.toString());
+    this.renderStat(statsEl, '🔗', 'Links', linkCount.toString());
+    this.renderStat(statsEl, '🏷️', 'Tags', tagCount.toString());
 
     // Actions section
     const actionsEl = container.createDiv({ cls: 'cultivator-actions' });
 
     const assessBtn = actionsEl.createEl('button', {
       cls: 'cultivator-btn cultivator-btn-primary',
-      text: '🔍 품질 평가하기'
+      text: '🔍 Assess Quality'
     });
     assessBtn.addEventListener('click', () => this.runAssessment());
 
@@ -182,7 +182,7 @@ export class CultivatorView extends ItemView {
       // Show "loaded from note" indicator if applicable
       if (this.isLoadedFromNote) {
         const loadedIndicator = this.dynamicContentEl.createDiv({ cls: 'cultivator-loaded-indicator' });
-        loadedIndicator.createEl('span', { text: '📂 저장된 평가 불러옴' });
+        loadedIndicator.createEl('span', { text: '📂 Loaded saved assessment' });
       }
 
       this.renderAssessmentResults(this.dynamicContentEl, this.lastAssessment);
@@ -192,16 +192,16 @@ export class CultivatorView extends ItemView {
       const saveActionsEl = this.dynamicContentEl.createDiv({ cls: 'cultivator-save-actions' });
       const saveBtn = saveActionsEl.createEl('button', {
         cls: 'cultivator-btn cultivator-btn-save',
-        text: '📝 노트에 저장'
+        text: '📝 Save to Note'
       });
       saveBtn.addEventListener('click', () => this.saveAssessmentToNote());
     } else {
       // Default hint
       const guideEl = this.dynamicContentEl.createDiv({ cls: 'cultivator-guide' });
-      guideEl.createEl('h4', { text: '🌱 성장 가이드' });
+      guideEl.createEl('h4', { text: '🌱 Growth Guide' });
       const tipEl = guideEl.createDiv({ cls: 'cultivator-tip' });
       tipEl.createEl('p', {
-        text: '품질 평가를 실행하면 다음 단계로 성장하기 위한 구체적인 가이드를 받을 수 있습니다.'
+        text: 'Run a quality assessment to receive specific guidance for growing to the next stage.'
       });
     }
   }
@@ -218,7 +218,7 @@ export class CultivatorView extends ItemView {
 
     loadingEl.createEl('p', {
       cls: 'cultivator-loading-text',
-      text: 'AI가 노트 품질을 평가하고 있습니다...'
+      text: 'AI is evaluating note quality...'
     });
   }
 
@@ -286,19 +286,19 @@ export class CultivatorView extends ItemView {
 
   private async runAssessment(): Promise<void> {
     if (!this.currentFile) {
-      new Notice('노트를 먼저 열어주세요.');
+      new Notice('Please open a note first.');
       return;
     }
 
     const aiService = this.plugin.getAIService();
     if (!aiService?.isAvailable()) {
-      new Notice('AI 설정을 먼저 완료해주세요.');
+      new Notice('Please complete AI settings first.');
       return;
     }
 
     const provider = aiService.getCurrentProvider();
     if (!provider) {
-      new Notice('AI 프로바이더를 찾을 수 없습니다.');
+      new Notice('AI provider not found.');
       return;
     }
 
@@ -321,15 +321,15 @@ export class CultivatorView extends ItemView {
       if (result.assessment) {
         this.lastAssessment = result;
         this.renderDynamicContent();
-        new Notice('✅ 평가 완료!');
+        new Notice('✅ Assessment complete!');
       } else {
         this.renderDynamicContent();
-        new Notice(`❌ 평가 실패: ${result.error ?? '알 수 없는 오류'}`);
+        new Notice(`❌ Assessment failed: ${result.error ?? 'Unknown error'}`);
       }
     } catch (error) {
       this.renderDynamicContent();
-      const message = error instanceof Error ? error.message : '알 수 없는 오류';
-      new Notice(`❌ 오류: ${message}`);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      new Notice(`❌ Error: ${message}`);
     }
   }
 
@@ -337,14 +337,14 @@ export class CultivatorView extends ItemView {
     if (!result.assessment) return;
 
     const resultsEl = container.createDiv({ cls: 'cultivator-results' });
-    resultsEl.createEl('h4', { text: '📊 평가 결과' });
+    resultsEl.createEl('h4', { text: '📊 Assessment Results' });
 
     const assessment = result.assessment;
     const qualityScore = assessment.qualityScore;
 
     // Overall score
     const scoreEl = resultsEl.createDiv({ cls: 'cultivator-score' });
-    scoreEl.createEl('span', { cls: 'cultivator-score-value', text: `${qualityScore.totalScore}점` });
+    scoreEl.createEl('span', { cls: 'cultivator-score-value', text: `${qualityScore.totalScore}pts` });
     scoreEl.createEl('span', { cls: 'cultivator-score-grade', text: qualityScore.getGrade() });
 
     // Dimension scores
@@ -363,7 +363,7 @@ export class CultivatorView extends ItemView {
       const recLeftEl = recEl.createDiv({ cls: 'cultivator-recommendation-left' });
       recLeftEl.createEl('span', {
         cls: 'cultivator-recommendation-label',
-        text: '추천 성숙도:'
+        text: 'Recommended:'
       });
       recLeftEl.createEl('span', {
         cls: 'cultivator-recommendation-value',
@@ -380,13 +380,13 @@ export class CultivatorView extends ItemView {
       if (currentMaturity.level !== recommendedMaturity.level) {
         const updateBtn = recEl.createEl('button', {
           cls: 'cultivator-btn-update',
-          text: '업데이트'
+          text: 'Update'
         });
         updateBtn.addEventListener('click', () => this.updateMaturityToRecommended(recommendedMaturity));
       } else {
         recEl.createEl('span', {
           cls: 'cultivator-recommendation-match',
-          text: '✓ 일치'
+          text: '✓ Match'
         });
       }
     }
@@ -413,15 +413,15 @@ export class CultivatorView extends ItemView {
       });
 
       if (result.success) {
-        new Notice(`✅ 성숙도가 ${targetMaturity.icon} ${targetMaturity.displayName}(으)로 업데이트되었습니다.`);
+        new Notice(`✅ Maturity updated to ${targetMaturity.icon} ${targetMaturity.displayName}.`);
         // Re-render the entire view to reflect the change
         await this.renderNoteInfo(this.currentFile);
       } else {
-        new Notice(`❌ 업데이트 실패: ${result.error ?? '알 수 없는 오류'}`);
+        new Notice(`❌ Update failed: ${result.error ?? 'Unknown error'}`);
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : '알 수 없는 오류';
-      new Notice(`❌ 오류: ${message}`);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      new Notice(`❌ Error: ${message}`);
     }
   }
 
@@ -433,7 +433,7 @@ export class CultivatorView extends ItemView {
 
     const labelEl = barContainer.createDiv({ cls: 'cultivator-dimension-label' });
     labelEl.createEl('span', { text: `${dim.icon} ${dim.displayName}` });
-    labelEl.createEl('span', { text: `${dim.score}점` });
+    labelEl.createEl('span', { text: `${dim.score}pts` });
 
     const barBg = barContainer.createDiv({ cls: 'cultivator-dimension-bar-bg' });
     const barFill = barBg.createDiv({ cls: 'cultivator-dimension-bar-fill' });
@@ -453,7 +453,7 @@ export class CultivatorView extends ItemView {
 
   private renderGrowthGuideSection(container: HTMLElement): void {
     const guideEl = container.createDiv({ cls: 'cultivator-guide' });
-    guideEl.createEl('h4', { text: '🌱 성장 가이드' });
+    guideEl.createEl('h4', { text: '🌱 Growth Guide' });
 
     // Check if we have assessment results with improvements
     if (this.lastAssessment?.assessment?.improvements && this.lastAssessment.assessment.improvements.length > 0) {
@@ -461,7 +461,7 @@ export class CultivatorView extends ItemView {
     } else {
       const tipEl = guideEl.createDiv({ cls: 'cultivator-tip' });
       tipEl.createEl('p', {
-        text: '개선 제안이 없습니다. 훌륭한 노트입니다!'
+        text: 'No improvement suggestions. Excellent note!'
       });
     }
   }
@@ -479,7 +479,7 @@ export class CultivatorView extends ItemView {
 
       // Priority indicator
       const priorityIcon = imp.priority === 'high' ? '🔴' : imp.priority === 'medium' ? '🟡' : '🟢';
-      const priorityText = imp.priority === 'high' ? '높음' : imp.priority === 'medium' ? '보통' : '낮음';
+      const priorityText = imp.priority === 'high' ? 'High' : imp.priority === 'medium' ? 'Medium' : 'Low';
 
       // Header with dimension and priority
       const headerEl = itemEl.createDiv({ cls: 'cultivator-improvement-header' });
@@ -499,7 +499,7 @@ export class CultivatorView extends ItemView {
       // Example if available
       if (imp.example) {
         const exampleEl = itemEl.createDiv({ cls: 'cultivator-improvement-example' });
-        exampleEl.createEl('span', { cls: 'cultivator-example-label', text: '💡 예시: ' });
+        exampleEl.createEl('span', { cls: 'cultivator-example-label', text: '💡 Example: ' });
         exampleEl.createEl('span', { text: imp.example });
       }
     });
@@ -517,22 +517,22 @@ export class CultivatorView extends ItemView {
     const date = new Date().toISOString().split('T')[0];
 
     const lines: string[] = [];
-    lines.push(`> [!${ASSESSMENT_CALLOUT_TYPE}]- 📊 품질 평가 결과 (${date})`);
-    lines.push(`> **총점**: ${qualityScore.totalScore}점 (${qualityScore.getGrade()})`);
+    lines.push(`> [!${ASSESSMENT_CALLOUT_TYPE}]- 📊 Quality Assessment Results (${date})`);
+    lines.push(`> **Total Score**: ${qualityScore.totalScore}pts (${qualityScore.getGrade()})`);
 
     if (assessment.recommendedMaturity) {
-      lines.push(`> **추천 성숙도**: ${assessment.recommendedMaturity.icon} ${assessment.recommendedMaturity.displayName}`);
+      lines.push(`> **Recommended Maturity**: ${assessment.recommendedMaturity.icon} ${assessment.recommendedMaturity.displayName}`);
     }
 
     lines.push(`>`);
-    lines.push(`> | 차원 | 점수 | 피드백 |`);
-    lines.push(`> |------|------|--------|`);
+    lines.push(`> | Dimension | Score | Feedback |`);
+    lines.push(`> |-----------|-------|----------|`);
 
     assessment.improvements.forEach(imp => {
       // Escape pipe characters in feedback
       const feedback = imp.suggestion.replace(/\|/g, '\\|').replace(/\n/g, ' ');
       const truncatedFeedback = feedback.length > 100 ? feedback.substring(0, 100) + '...' : feedback;
-      lines.push(`> | ${imp.dimension} | ${this.getScoreForDimension(imp.dimension)}점 | ${truncatedFeedback} |`);
+      lines.push(`> | ${imp.dimension} | ${this.getScoreForDimension(imp.dimension)}pts | ${truncatedFeedback} |`);
     });
 
     return lines.join('\n');
@@ -545,11 +545,11 @@ export class CultivatorView extends ItemView {
     const dimensions = qualityScore.getAllDimensions();
 
     const dimensionMap: Record<string, string> = {
-      '원자성': '원자성',
-      '연결성': '연결성',
-      '명확성': '명확성',
-      '근거': '근거',
-      '독창성': '독창성',
+      'Atomicity': 'Atomicity',
+      'Connectivity': 'Connectivity',
+      'Clarity': 'Clarity',
+      'Evidence': 'Evidence',
+      'Originality': 'Originality',
     };
 
     const dim = dimensions.find(d => d.displayName === dimensionName);
@@ -558,14 +558,14 @@ export class CultivatorView extends ItemView {
 
   private async saveAssessmentToNote(): Promise<void> {
     if (!this.currentFile || !this.lastAssessment?.assessment) {
-      new Notice('저장할 평가 결과가 없습니다.');
+      new Notice('No assessment results to save.');
       return;
     }
 
     try {
       const callout = this.generateAssessmentCallout();
       if (!callout) {
-        new Notice('콜아웃 생성에 실패했습니다.');
+        new Notice('Failed to generate callout.');
         return;
       }
 
@@ -575,19 +575,19 @@ export class CultivatorView extends ItemView {
       if (ASSESSMENT_CALLOUT_BLOCK_REGEX.test(content)) {
         // Replace existing callout
         content = content.replace(ASSESSMENT_CALLOUT_BLOCK_REGEX, callout);
-        new Notice('✅ 평가 결과가 업데이트되었습니다.');
+        new Notice('✅ Assessment results updated.');
       } else {
         // Append to end of note
         content = content.replace(/\s+$/, '') + '\n\n' + callout + '\n';
-        new Notice('✅ 평가 결과가 노트에 저장되었습니다.');
+        new Notice('✅ Assessment results saved to note.');
       }
 
       await this.app.vault.modify(this.currentFile, content);
       this.isLoadedFromNote = true;
 
     } catch (error) {
-      const message = error instanceof Error ? error.message : '알 수 없는 오류';
-      new Notice(`❌ 저장 실패: ${message}`);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      new Notice(`❌ Save failed: ${message}`);
     }
   }
 
@@ -615,13 +615,13 @@ export class CultivatorView extends ItemView {
     try {
       const lines = calloutBlock.split('\n').map(l => l.replace(/^>\s?/, ''));
 
-      // Parse total score from line like "**총점**: 72점 (양호)"
-      const totalScoreLine = lines.find(l => l.includes('**총점**'));
-      const totalScoreMatch = totalScoreLine?.match(/(\d+)점/);
+      // Parse total score from line like "**Total Score**: 72pts (Good)"
+      const totalScoreLine = lines.find(l => l.includes('**Total Score**'));
+      const totalScoreMatch = totalScoreLine?.match(/(\d+)pts/);
       const totalScore = totalScoreMatch ? parseInt(totalScoreMatch[1]) : 0;
 
       // Parse recommended maturity
-      const maturityLine = lines.find(l => l.includes('**추천 성숙도**'));
+      const maturityLine = lines.find(l => l.includes('**Recommended Maturity**'));
       let recommendedMaturity: MaturityLevel | null = null;
       if (maturityLine) {
         if (maturityLine.includes('Evergreen')) recommendedMaturity = MaturityLevel.create('evergreen');
@@ -631,7 +631,7 @@ export class CultivatorView extends ItemView {
       }
 
       // Parse dimension scores from table
-      const tableLines = lines.filter(l => l.startsWith('|') && !l.includes('---') && !l.includes('차원'));
+      const tableLines = lines.filter(l => l.startsWith('|') && !l.includes('---') && !l.includes('Dimension'));
       const improvements: { dimension: string; priority: 'high' | 'medium' | 'low'; suggestion: string }[] = [];
       const dimensionScores: Record<string, { score: number; feedback: string }> = {};
 
@@ -654,11 +654,11 @@ export class CultivatorView extends ItemView {
 
       // Build a minimal assessment object for display
       const qualityScore = QualityScore.fromScores({
-        atomicity: dimensionScores['원자성'] || { score: 0, feedback: '' },
-        connectivity: dimensionScores['연결성'] || { score: 0, feedback: '' },
-        clarity: dimensionScores['명확성'] || { score: 0, feedback: '' },
-        evidence: dimensionScores['근거'] || { score: 0, feedback: '' },
-        originality: dimensionScores['독창성'] || { score: 0, feedback: '' },
+        atomicity: dimensionScores['Atomicity'] || { score: 0, feedback: '' },
+        connectivity: dimensionScores['Connectivity'] || { score: 0, feedback: '' },
+        clarity: dimensionScores['Clarity'] || { score: 0, feedback: '' },
+        evidence: dimensionScores['Evidence'] || { score: 0, feedback: '' },
+        originality: dimensionScores['Originality'] || { score: 0, feedback: '' },
       });
 
       const currentMaturity = MaturityLevel.default();

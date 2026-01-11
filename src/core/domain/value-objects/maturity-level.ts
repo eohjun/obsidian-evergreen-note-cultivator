@@ -1,12 +1,12 @@
 /**
  * MaturityLevel Value Object
- * 노트의 성숙도 단계를 나타내는 불변 값 객체
+ * Immutable value object representing note maturity stage
  *
- * 성숙도 단계:
- * - 🌱 Seed: 초기 아이디어, 미가공 상태
- * - 🌿 Sprout: 기본 구조화, 일부 연결
- * - 🌳 Tree: 완성된 원자적 노트, 풍부한 연결
- * - 🌲 Evergreen: 지속 업데이트, 핵심 허브 노트
+ * Maturity stages:
+ * - 🌱 Seed: Initial idea, raw state
+ * - 🌿 Sprout: Basic structure, some connections
+ * - 🌳 Tree: Complete atomic note, rich connections
+ * - 🌲 Evergreen: Continuously updated, core hub note
  */
 
 export type MaturityLevelEnum = 'seed' | 'sprout' | 'tree' | 'evergreen';
@@ -25,7 +25,7 @@ const MATURITY_CONFIGS: Record<MaturityLevelEnum, MaturityLevelConfig> = {
     level: 'seed',
     icon: '🌱',
     displayName: 'Seed',
-    description: '초기 아이디어, 미가공 상태',
+    description: 'Initial idea, raw state',
     minQualityScore: 0,
     order: 1,
   },
@@ -33,7 +33,7 @@ const MATURITY_CONFIGS: Record<MaturityLevelEnum, MaturityLevelConfig> = {
     level: 'sprout',
     icon: '🌿',
     displayName: 'Sprout',
-    description: '기본 구조화, 일부 연결',
+    description: 'Basic structure, some connections',
     minQualityScore: 40,
     order: 2,
   },
@@ -41,7 +41,7 @@ const MATURITY_CONFIGS: Record<MaturityLevelEnum, MaturityLevelConfig> = {
     level: 'tree',
     icon: '🌳',
     displayName: 'Tree',
-    description: '완성된 원자적 노트, 풍부한 연결',
+    description: 'Complete atomic note, rich connections',
     minQualityScore: 70,
     order: 3,
   },
@@ -49,7 +49,7 @@ const MATURITY_CONFIGS: Record<MaturityLevelEnum, MaturityLevelConfig> = {
     level: 'evergreen',
     icon: '🌲',
     displayName: 'Evergreen',
-    description: '지속 업데이트, 핵심 허브 노트',
+    description: 'Continuously updated, core hub note',
     minQualityScore: 90,
     order: 4,
   },
@@ -63,7 +63,7 @@ export class MaturityLevel {
   }
 
   /**
-   * 성숙도 레벨 생성
+   * Create maturity level
    */
   static create(level: MaturityLevelEnum): MaturityLevel {
     if (!MATURITY_CONFIGS[level]) {
@@ -73,14 +73,14 @@ export class MaturityLevel {
   }
 
   /**
-   * 기본값 (Seed) 생성
+   * Create default (Seed)
    */
   static default(): MaturityLevel {
     return new MaturityLevel('seed');
   }
 
   /**
-   * 품질 점수 기반으로 추천 성숙도 반환
+   * Return recommended maturity based on quality score
    */
   static fromQualityScore(score: number): MaturityLevel {
     if (score >= MATURITY_CONFIGS.evergreen.minQualityScore) {
@@ -96,7 +96,7 @@ export class MaturityLevel {
   }
 
   /**
-   * Frontmatter 문자열에서 파싱
+   * Parse from frontmatter string
    */
   static fromFrontmatter(value: string | undefined): MaturityLevel {
     if (!value) {
@@ -137,49 +137,49 @@ export class MaturityLevel {
   }
 
   /**
-   * 아이콘과 이름을 포함한 표시 텍스트
+   * Display text including icon and name
    */
   getDisplayText(): string {
     return `${this._config.icon} ${this._config.displayName}`;
   }
 
   /**
-   * 아이콘과 설명을 포함한 전체 텍스트
+   * Full display text including icon and description
    */
   getFullDisplayText(): string {
     return `${this._config.icon} ${this._config.displayName}: ${this._config.description}`;
   }
 
   /**
-   * Frontmatter에 저장할 값
+   * Value to store in frontmatter
    */
   toFrontmatter(): string {
     return this._config.level;
   }
 
   /**
-   * 다른 성숙도와 비교
+   * Compare with other maturity level
    */
   equals(other: MaturityLevel): boolean {
     return this._config.level === other._config.level;
   }
 
   /**
-   * 현재 레벨이 다른 레벨보다 높은지 확인
+   * Check if current level is higher than another
    */
   isHigherThan(other: MaturityLevel): boolean {
     return this._config.order > other._config.order;
   }
 
   /**
-   * 현재 레벨이 다른 레벨보다 낮은지 확인
+   * Check if current level is lower than another
    */
   isLowerThan(other: MaturityLevel): boolean {
     return this._config.order < other._config.order;
   }
 
   /**
-   * 다음 단계 레벨 반환 (Evergreen이면 null)
+   * Return next level (null if Evergreen)
    */
   getNextLevel(): MaturityLevel | null {
     const levels: MaturityLevelEnum[] = ['seed', 'sprout', 'tree', 'evergreen'];
@@ -193,22 +193,22 @@ export class MaturityLevel {
   }
 
   /**
-   * 다음 단계로 업그레이드 가능한지 확인
+   * Check if can upgrade to target level
    */
   canUpgradeTo(target: MaturityLevel): boolean {
     return target.isHigherThan(this);
   }
 
   /**
-   * 역행 (다운그레이드) 가능 여부 - 기본적으로 false
-   * 노트 성숙도는 성장만 가능하고 역행하지 않음
+   * Check if can downgrade - default false
+   * Note maturity only grows, never regresses
    */
   canDowngradeTo(_target: MaturityLevel): boolean {
     return false;
   }
 
   /**
-   * 다음 단계로 성장하기 위한 최소 점수
+   * Minimum score required for next level
    */
   getNextLevelThreshold(): number | null {
     const nextLevel = this.getNextLevel();
@@ -219,7 +219,7 @@ export class MaturityLevel {
   }
 
   /**
-   * 모든 성숙도 레벨 목록 반환
+   * Return list of all maturity levels
    */
   static getAllLevels(): MaturityLevel[] {
     return (['seed', 'sprout', 'tree', 'evergreen'] as MaturityLevelEnum[]).map(

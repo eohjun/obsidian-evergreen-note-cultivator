@@ -1,13 +1,13 @@
 /**
  * QualityScore Value Object
- * 노트의 종합 품질 점수를 나타내는 불변 값 객체
+ * Immutable value object representing overall note quality score
  *
- * 5개 차원의 가중 평균으로 계산:
- * - Atomicity (25%): 원자성
- * - Connectivity (25%): 연결성
- * - Clarity (20%): 명확성
- * - Evidence (15%): 근거
- * - Originality (15%): 독창성
+ * Calculated as weighted average of 5 dimensions:
+ * - Atomicity (25%): One note, one idea
+ * - Connectivity (25%): Links to other notes
+ * - Clarity (20%): Self-explanatory content
+ * - Evidence (15%): Sources and examples
+ * - Originality (15%): Own words
  */
 
 import {
@@ -38,13 +38,13 @@ export class QualityScore {
   }
 
   /**
-   * 차원별 점수로 품질 점수 생성
+   * Create quality score from dimensions
    */
   static create(dimensions: QualityDimension[]): QualityScore {
     const allTypes = QualityDimension.getAllTypes();
     const providedTypes = new Set(dimensions.map((d) => d.type));
 
-    // 모든 차원이 제공되었는지 확인
+    // Check if all dimensions are provided
     for (const type of allTypes) {
       if (!providedTypes.has(type)) {
         throw new Error(`Missing quality dimension: ${type}`);
@@ -55,7 +55,7 @@ export class QualityScore {
   }
 
   /**
-   * 간편 생성 - 숫자 객체로 생성
+   * Convenience creation from score object
    */
   static fromScores(scores: {
     atomicity: { score: number; feedback?: string };
@@ -73,7 +73,7 @@ export class QualityScore {
   }
 
   /**
-   * 데이터에서 복원
+   * Restore from data
    */
   static fromData(data: QualityScoreData): QualityScore {
     const dimensions = data.dimensions.map((d) => QualityDimension.fromData(d));
@@ -100,21 +100,21 @@ export class QualityScore {
   }
 
   /**
-   * 특정 차원 점수 조회
+   * Get specific dimension score
    */
   getDimension(type: QualityDimensionType): QualityDimension | undefined {
     return this._dimensions.get(type);
   }
 
   /**
-   * 모든 차원 목록 반환
+   * Return all dimensions
    */
   getAllDimensions(): QualityDimension[] {
     return Array.from(this._dimensions.values());
   }
 
   /**
-   * 가장 높은 점수 차원
+   * Strongest dimension (highest score)
    */
   getStrongestDimension(): QualityDimension {
     let strongest: QualityDimension | null = null;
@@ -129,7 +129,7 @@ export class QualityScore {
   }
 
   /**
-   * 가장 낮은 점수 차원 (개선 필요)
+   * Weakest dimension (needs improvement)
    */
   getWeakestDimension(): QualityDimension {
     let weakest: QualityDimension | null = null;
@@ -144,7 +144,7 @@ export class QualityScore {
   }
 
   /**
-   * 개선이 필요한 차원들 (점수 70 미만)
+   * Dimensions needing improvement (score below 70)
    */
   getDimensionsNeedingImprovement(): QualityDimension[] {
     return this.getAllDimensions()
@@ -153,7 +153,7 @@ export class QualityScore {
   }
 
   /**
-   * 종합 등급 (A-F)
+   * Overall grade (A-F)
    */
   getGrade(): string {
     if (this._totalScore >= 90) return 'A';
@@ -164,39 +164,39 @@ export class QualityScore {
   }
 
   /**
-   * 상태 텍스트
+   * Status text
    */
   getStatusText(): string {
     const grade = this.getGrade();
     switch (grade) {
       case 'A':
-        return '우수';
+        return 'Excellent';
       case 'B':
-        return '양호';
+        return 'Good';
       case 'C':
-        return '보통';
+        return 'Fair';
       case 'D':
-        return '미흡';
+        return 'Poor';
       default:
-        return '개선 필요';
+        return 'Needs Improvement';
     }
   }
 
   /**
-   * 요약 표시 텍스트
+   * Summary display text
    */
   getSummaryText(): string {
-    return `종합 ${this._totalScore}점 (${this.getGrade()}) - ${this.getStatusText()}`;
+    return `Total ${this._totalScore}pts (${this.getGrade()}) - ${this.getStatusText()}`;
   }
 
   /**
-   * 상세 표시 텍스트
+   * Detailed display text
    */
   getDetailedText(): string {
     const lines = [
-      `📊 종합 품질 점수: ${this._totalScore}점 (${this.getGrade()})`,
+      `📊 Total Quality Score: ${this._totalScore}pts (${this.getGrade()})`,
       '',
-      '차원별 점수:',
+      'Dimension Scores:',
     ];
 
     this.getAllDimensions()
@@ -208,28 +208,28 @@ export class QualityScore {
     const weakest = this.getWeakestDimension();
     if (weakest.score < 70) {
       lines.push('');
-      lines.push(`⚠️ 가장 개선이 필요한 영역: ${weakest.displayName}`);
+      lines.push(`⚠️ Most needs improvement: ${weakest.displayName}`);
     }
 
     return lines.join('\n');
   }
 
   /**
-   * 다른 점수와 비교
+   * Compare with other score
    */
   equals(other: QualityScore): boolean {
     return this._totalScore === other._totalScore;
   }
 
   /**
-   * 다른 점수보다 높은지 확인
+   * Check if higher than other score
    */
   isHigherThan(other: QualityScore): boolean {
     return this._totalScore > other._totalScore;
   }
 
   /**
-   * 직렬화
+   * Serialize
    */
   toData(): QualityScoreData {
     return {

@@ -1,8 +1,8 @@
 /**
  * Evergreen Note Cultivator - Obsidian Plugin
  *
- * 영구 노트 작성 과정을 단계별로 가이드하고 노트의 성장을 추적하는 플러그인
- * Zettelkasten 원칙에 따라 노트 품질을 평가하고 성숙도를 관리
+ * A plugin that guides the note-writing process step by step and tracks note growth.
+ * Evaluates note quality and manages maturity levels based on Zettelkasten principles.
  */
 
 import { Plugin, Notice, TFile, WorkspaceLeaf } from 'obsidian';
@@ -243,12 +243,12 @@ export default class EvergreenNoteCultivatorPlugin extends Plugin {
     const activeFile = this.app.workspace.getActiveFile();
 
     if (!activeFile) {
-      new Notice('노트를 열어주세요.');
+      new Notice('Please open a note.');
       return;
     }
 
     if (!this.aiService?.isAvailable()) {
-      new Notice('AI 설정을 먼저 완료해주세요. (설정 → Evergreen Note Cultivator)');
+      new Notice('Please complete AI settings first. (Settings → Evergreen Note Cultivator)');
       return;
     }
 
@@ -256,15 +256,15 @@ export default class EvergreenNoteCultivatorPlugin extends Plugin {
       const content = await this.app.vault.read(activeFile);
 
       if (!content.trim()) {
-        new Notice('노트 내용이 비어있습니다.');
+        new Notice('Note content is empty.');
         return;
       }
 
       const modal = new AssessmentModal(this.app, this, activeFile);
       modal.open();
     } catch (error) {
-      const message = error instanceof Error ? error.message : '노트를 읽을 수 없습니다.';
-      new Notice(`오류: ${message}`);
+      const message = error instanceof Error ? error.message : 'Unable to read note.';
+      new Notice(`Error: ${message}`);
     }
   }
 
@@ -272,12 +272,12 @@ export default class EvergreenNoteCultivatorPlugin extends Plugin {
     const activeFile = this.app.workspace.getActiveFile();
 
     if (!activeFile) {
-      new Notice('노트를 열어주세요.');
+      new Notice('Please open a note.');
       return;
     }
 
     if (!this.aiService?.isAvailable()) {
-      new Notice('AI 설정을 먼저 완료해주세요.');
+      new Notice('Please complete AI settings first.');
       return;
     }
 
@@ -290,7 +290,7 @@ export default class EvergreenNoteCultivatorPlugin extends Plugin {
     const activeFile = this.app.workspace.getActiveFile();
 
     if (!activeFile) {
-      new Notice('노트를 열어주세요.');
+      new Notice('Please open a note.');
       return;
     }
 

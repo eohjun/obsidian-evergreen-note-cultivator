@@ -1,6 +1,6 @@
 /**
  * Assessment Modal
- * 노트 품질 평가 결과를 상세히 표시하는 모달
+ * Modal displaying detailed note quality assessment results
  */
 
 import { App, Modal, Notice, TFile } from 'obsidian';
@@ -106,14 +106,14 @@ export class AssessmentModal extends Modal {
     this.isLoading = true;
     const loadingEl = contentEl.createDiv({ cls: 'assessment-loading' });
     loadingEl.createEl('div', { cls: 'assessment-spinner' });
-    loadingEl.createEl('p', { text: '분석 중...' });
+    loadingEl.createEl('p', { text: 'Analyzing...' });
 
     const aiService = this.plugin.getAIService();
     if (!aiService?.isAvailable()) {
       loadingEl.empty();
       const errorEl = loadingEl.createDiv({ cls: 'assessment-error' });
       errorEl.createEl('p', {
-        text: '❌ AI 설정을 먼저 완료해주세요. (설정 → Evergreen Note Cultivator)'
+        text: '❌ Please complete AI settings first. (Settings → Evergreen Note Cultivator)'
       });
       this.isLoading = false;
       return;
@@ -124,7 +124,7 @@ export class AssessmentModal extends Modal {
       loadingEl.empty();
       const errorEl = loadingEl.createDiv({ cls: 'assessment-error' });
       errorEl.createEl('p', {
-        text: '❌ AI 프로바이더를 찾을 수 없습니다.'
+        text: '❌ AI provider not found.'
       });
       this.isLoading = false;
       return;
@@ -180,9 +180,9 @@ export class AssessmentModal extends Modal {
 
     } catch (error) {
       loadingEl.empty();
-      const message = error instanceof Error ? error.message : '알 수 없는 오류';
+      const message = error instanceof Error ? error.message : 'Unknown error';
       const errorEl = loadingEl.createDiv({ cls: 'assessment-error' });
-      errorEl.createEl('p', { text: `❌ 분석 실패: ${message}` });
+      errorEl.createEl('p', { text: `❌ Analysis failed: ${message}` });
       this.isLoading = false;
     }
   }
@@ -193,7 +193,7 @@ export class AssessmentModal extends Modal {
     if (!this.assessment?.assessment) {
       const errorEl = contentEl.createDiv({ cls: 'assessment-error' });
       errorEl.createEl('p', {
-        text: `❌ 평가 실패: ${this.assessment?.error ?? '알 수 없는 오류'}`
+        text: `❌ Assessment failed: ${this.assessment?.error ?? 'Unknown error'}`
       });
       return;
     }
@@ -203,11 +203,11 @@ export class AssessmentModal extends Modal {
     // Tab navigation
     const tabsEl = contentEl.createDiv({ cls: 'assessment-tabs' });
     const tabs = [
-      { id: 'overview', label: '📊 개요' },
-      { id: 'dimensions', label: '📏 차원별 분석' },
-      { id: 'suggestions', label: '💡 개선 제안' },
-      { id: 'connections', label: '🔗 연결 제안' },
-      { id: 'growth', label: '🌱 성장 가이드' },
+      { id: 'overview', label: '📊 Overview' },
+      { id: 'dimensions', label: '📏 Dimension Analysis' },
+      { id: 'suggestions', label: '💡 Improvements' },
+      { id: 'connections', label: '🔗 Connections' },
+      { id: 'growth', label: '🌱 Growth Guide' },
     ];
 
     const contentContainer = contentEl.createDiv({ cls: 'assessment-tab-content' });
@@ -260,7 +260,7 @@ export class AssessmentModal extends Modal {
     scoreCircle.createEl('span', { text: `${assessment.qualityScore.totalScore}` });
 
     const scoreInfo = scoreCard.createDiv({ cls: 'assessment-score-info' });
-    scoreInfo.createEl('h4', { text: `등급: ${assessment.qualityScore.getGrade()}` });
+    scoreInfo.createEl('h4', { text: `Grade: ${assessment.qualityScore.getGrade()}` });
     scoreInfo.createEl('p', { text: assessment.qualityScore.getStatusText() });
 
     // Current vs Recommended maturity
@@ -275,19 +275,19 @@ export class AssessmentModal extends Modal {
     if (recommendedMaturity && recommendedMaturity.isHigherThan(currentMaturity)) {
       const upgradeSection = container.createDiv({ cls: 'cultivator-recommendation' });
       upgradeSection.createEl('p', {
-        text: `✨ 추천 성숙도: ${recommendedMaturity.icon} ${recommendedMaturity.displayName}`
+        text: `✨ Recommended: ${recommendedMaturity.icon} ${recommendedMaturity.displayName}`
       });
 
       const updateBtn = container.createEl('button', {
         cls: 'assessment-update-btn',
-        text: `성숙도 업그레이드: ${recommendedMaturity.getDisplayText()}`
+        text: `Upgrade Maturity: ${recommendedMaturity.getDisplayText()}`
       });
       updateBtn.addEventListener('click', () => this.updateMaturity(recommendedMaturity));
     }
 
     // Quick summary
     const summarySection = container.createDiv({ cls: 'assessment-summary' });
-    summarySection.createEl('h4', { text: '요약' });
+    summarySection.createEl('h4', { text: 'Summary' });
     summarySection.createEl('p', { text: assessment.getSummaryText() });
   }
 
@@ -303,7 +303,7 @@ export class AssessmentModal extends Modal {
       const headerEl = dimCard.createDiv({ cls: 'assessment-dimension-header' });
       const titleEl = headerEl.createDiv({ cls: 'assessment-dimension-title' });
       titleEl.createEl('span', { text: `${dim.icon} ${dim.displayName}` });
-      headerEl.createEl('span', { cls: 'assessment-dimension-score', text: `${dim.score}점` });
+      headerEl.createEl('span', { cls: 'assessment-dimension-score', text: `${dim.score}pts` });
 
       // Progress bar
       const barBg = dimCard.createDiv({ cls: 'cultivator-dimension-bar-bg' });
@@ -339,7 +339,7 @@ export class AssessmentModal extends Modal {
         if (imp.example) {
           card.createEl('p', {
             cls: 'assessment-dimension-feedback',
-            text: `예시: ${imp.example}`
+            text: `Example: ${imp.example}`
           });
         }
       });
@@ -349,19 +349,19 @@ export class AssessmentModal extends Modal {
     const splitSuggestion = assessment.splitSuggestion;
     if (splitSuggestion) {
       const splitSection = container.createDiv({ cls: 'assessment-suggestion-list' });
-      splitSection.createEl('h4', { text: '✂️ 분리 제안' });
+      splitSection.createEl('h4', { text: '✂️ Split Suggestion' });
       splitSection.createEl('p', {
         cls: 'assessment-dimension-feedback',
-        text: '이 노트는 여러 주제를 다루고 있어 분리를 권장합니다.'
+        text: 'This note covers multiple topics and splitting is recommended.'
       });
 
       const reasonCard = splitSection.createDiv({ cls: 'assessment-suggestion-card' });
-      reasonCard.createEl('h4', { text: '분리 이유' });
+      reasonCard.createEl('h4', { text: 'Reason for Split' });
       reasonCard.createEl('p', { text: splitSuggestion.reason });
 
       if (splitSuggestion.suggestedNotes && splitSuggestion.suggestedNotes.length > 0) {
         const notesSection = splitSection.createDiv({ cls: 'assessment-suggestion-card' });
-        notesSection.createEl('h4', { text: '제안되는 새 노트' });
+        notesSection.createEl('h4', { text: 'Suggested New Notes' });
 
         splitSuggestion.suggestedNotes.forEach((note, idx) => {
           const noteEl = notesSection.createDiv();
@@ -377,7 +377,7 @@ export class AssessmentModal extends Modal {
     if ((!improvements || improvements.length === 0) && !splitSuggestion) {
       container.createEl('p', {
         cls: 'cultivator-empty',
-        text: '개선 제안이 없습니다. 훌륭한 노트입니다!'
+        text: 'No improvement suggestions. Excellent note!'
       });
     }
   }
@@ -387,7 +387,7 @@ export class AssessmentModal extends Modal {
     if (!suggestions || suggestions.length === 0) {
       container.createEl('p', {
         cls: 'cultivator-empty',
-        text: '연결 제안이 없습니다.'
+        text: 'No connection suggestions.'
       });
       return;
     }
@@ -406,7 +406,7 @@ export class AssessmentModal extends Modal {
 
       if (conn.linkSuggestion) {
         const linkEl = info.createDiv({ cls: 'assessment-connection-reason' });
-        linkEl.createEl('span', { text: '제안: ' });
+        linkEl.createEl('span', { text: 'Suggestion: ' });
         linkEl.createEl('code', { text: conn.linkSuggestion });
       }
 
@@ -422,7 +422,7 @@ export class AssessmentModal extends Modal {
   private renderGrowthTab(container: HTMLElement): void {
     const guide = this.growthGuide?.guide;
     if (!guide) {
-      const errorMsg = this.growthGuide?.error ?? '성장 가이드를 생성할 수 없습니다.';
+      const errorMsg = this.growthGuide?.error ?? 'Unable to generate growth guide.';
       container.createEl('p', {
         cls: 'cultivator-empty',
         text: errorMsg
@@ -436,15 +436,15 @@ export class AssessmentModal extends Modal {
     const currentStage = growthGuide.createDiv({ cls: 'assessment-current-stage' });
     const targetLevel = MaturityLevel.create(guide.targetLevel);
     currentStage.createDiv({ cls: 'stage-icon', text: targetLevel.icon });
-    currentStage.createEl('h4', { text: `목표: ${targetLevel.displayName}` });
+    currentStage.createEl('h4', { text: `Target: ${targetLevel.displayName}` });
     currentStage.createEl('p', {
-      text: `현재 ${guide.currentScore}점 → 목표 ${guide.requiredScore}점`
+      text: `Current ${guide.currentScore}pts → Target ${guide.requiredScore}pts`
     });
 
     // Steps
     if (guide.steps && guide.steps.length > 0) {
       const stepsSection = growthGuide.createDiv({ cls: 'assessment-next-steps' });
-      stepsSection.createEl('h4', { text: '📋 실천 단계' });
+      stepsSection.createEl('h4', { text: '📋 Action Steps' });
 
       const stepList = stepsSection.createDiv({ cls: 'assessment-step-list' });
 
@@ -462,13 +462,13 @@ export class AssessmentModal extends Modal {
     // Estimated effort
     if (guide.estimatedEffort) {
       const effortTexts: Record<string, string> = {
-        low: '낮음 (10-30분)',
-        medium: '보통 (30분-1시간)',
-        high: '높음 (1시간 이상)',
+        low: 'Low (10-30 min)',
+        medium: 'Medium (30 min - 1 hour)',
+        high: 'High (1+ hour)',
       };
 
       const effortSection = growthGuide.createDiv({ cls: 'assessment-suggestion-card' });
-      effortSection.createEl('h4', { text: '⏱️ 예상 노력' });
+      effortSection.createEl('h4', { text: '⏱️ Estimated Effort' });
       effortSection.createEl('p', { text: effortTexts[guide.estimatedEffort] ?? guide.estimatedEffort });
     }
   }
@@ -492,14 +492,14 @@ export class AssessmentModal extends Modal {
       });
 
       if (result.success) {
-        new Notice(`✅ 성숙도가 ${result.newLevel.getDisplayText()}로 업데이트되었습니다!`);
+        new Notice(`✅ Maturity updated to ${result.newLevel.getDisplayText()}!`);
         this.close();
       } else {
-        new Notice(`❌ 업데이트 실패: ${result.error ?? '알 수 없는 오류'}`);
+        new Notice(`❌ Update failed: ${result.error ?? 'Unknown error'}`);
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : '알 수 없는 오류';
-      new Notice(`❌ 오류: ${message}`);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      new Notice(`❌ Error: ${message}`);
     }
   }
 }
