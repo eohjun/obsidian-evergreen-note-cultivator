@@ -69,9 +69,10 @@ export class ObsidianNoteRepository implements INoteRepository {
   async searchNotes(options: NoteSearchOptions): Promise<NoteSummary[]> {
     let files = this.app.vault.getMarkdownFiles();
 
-    // 폴더 필터
+    // 폴더 필터 (cross-platform safe)
     if (options.folder) {
-      files = files.filter(f => f.path.startsWith(options.folder!));
+      const normalizedFolder = normalizePath(options.folder);
+      files = files.filter(f => f.path.startsWith(normalizedFolder));
     }
 
     // 태그 필터
