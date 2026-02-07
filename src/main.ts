@@ -91,6 +91,7 @@ export default class EvergreenNoteCultivatorPlugin extends Plugin {
 
   async onunload(): Promise<void> {
     console.log('Evergreen Note Cultivator: Plugin unloaded');
+    this.aiService = null;
   }
 
   async loadSettings(): Promise<void> {
@@ -193,8 +194,7 @@ export default class EvergreenNoteCultivatorPlugin extends Plugin {
     if (!service) return;
 
     (['claude', 'openai', 'gemini', 'grok'] as LLMProviderType[]).forEach((type) => {
-      const providers = service['providers'] as Map<LLMProviderType, ILLMProvider>;
-      const provider = providers.get(type);
+      const provider = service.getProvider(type);
       if (provider) {
         const apiKey = this.settings.ai.apiKeys[type];
         if (apiKey) {

@@ -5,7 +5,7 @@
  * INoteRepository 인터페이스를 구현하여 Domain Layer와 Obsidian 연결
  */
 
-import { normalizePath, type App, type TFile, type CachedMetadata } from 'obsidian';
+import { normalizePath, TFile, type App, type CachedMetadata } from 'obsidian';
 import type {
   INoteRepository,
   NoteData,
@@ -36,12 +36,8 @@ export class ObsidianNoteRepository implements INoteRepository {
   async getByPath(path: string): Promise<NoteData | null> {
     const normalizedPath = normalizePath(path);
     const file = this.app.vault.getAbstractFileByPath(normalizedPath);
-    if (!(file instanceof this.app.vault.adapter.constructor)) {
-      // TFile check - use alternative approach
-      const files = this.app.vault.getMarkdownFiles();
-      const targetFile = files.find(f => f.path === normalizedPath);
-      if (!targetFile) return null;
-      return this.fileToNoteData(targetFile);
+    if (file instanceof TFile) {
+      return this.fileToNoteData(file);
     }
     return null;
   }

@@ -117,6 +117,13 @@ export class AIService {
   }
 
   /**
+   * 특정 타입의 프로바이더 가져오기
+   */
+  getProvider(type: LLMProviderType): ILLMProvider | undefined {
+    return this.providers.get(type);
+  }
+
+  /**
    * 등록된 프로바이더 목록
    */
   getAvailableProviders(): LLMProviderType[] {

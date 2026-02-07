@@ -50,6 +50,9 @@ export class AssessmentModal extends Modal {
   onClose(): void {
     const { contentEl } = this;
     contentEl.empty();
+    this.assessment = null;
+    this.connections = null;
+    this.growthGuide = null;
   }
 
   private renderHeader(): void {
@@ -211,21 +214,56 @@ export class AssessmentModal extends Modal {
     ];
 
     const contentContainer = contentEl.createDiv({ cls: 'assessment-tab-content' });
+    tabsEl.setAttribute('role', 'tablist');
+    contentContainer.setAttribute('role', 'tabpanel');
 
     tabs.forEach((tab, index) => {
       const tabBtn = tabsEl.createEl('button', {
         cls: 'assessment-tab' + (index === 0 ? ' is-active' : ''),
-        text: tab.label
+        text: tab.label,
+        attr: {
+          role: 'tab',
+          'aria-selected': index === 0 ? 'true' : 'false',
+          'aria-controls': 'assessment-tab-content',
+          tabindex: index === 0 ? '0' : '-1',
+        },
       });
+      tabBtn.dataset.tabId = tab.id;
       tabBtn.addEventListener('click', () => {
-        tabsEl.querySelectorAll('.assessment-tab').forEach(t => t.removeClass('is-active'));
-        tabBtn.addClass('is-active');
-        this.renderTabContent(contentContainer, tab.id);
+        this.activateTab(tabsEl, tabBtn, contentContainer, tab.id);
+      });
+      tabBtn.addEventListener('keydown', (e: KeyboardEvent) => {
+        const allTabs = Array.from(tabsEl.querySelectorAll('[role="tab"]')) as HTMLElement[];
+        const currentIdx = allTabs.indexOf(tabBtn);
+        let targetIdx = -1;
+        if (e.key === 'ArrowRight') targetIdx = (currentIdx + 1) % allTabs.length;
+        else if (e.key === 'ArrowLeft') targetIdx = (currentIdx - 1 + allTabs.length) % allTabs.length;
+        else if (e.key === 'Home') targetIdx = 0;
+        else if (e.key === 'End') targetIdx = allTabs.length - 1;
+        if (targetIdx >= 0) {
+          e.preventDefault();
+          const target = allTabs[targetIdx];
+          const targetTabId = target.dataset.tabId;
+          if (targetTabId) this.activateTab(tabsEl, target, contentContainer, targetTabId);
+          target.focus();
+        }
       });
     });
 
     // Initial tab content
     this.renderTabContent(contentContainer, 'overview');
+  }
+
+  private activateTab(tabsEl: HTMLElement, tabBtn: HTMLElement, contentContainer: HTMLElement, tabId: string): void {
+    tabsEl.querySelectorAll('[role="tab"]').forEach((t: Element) => {
+      t.removeClass('is-active');
+      t.setAttribute('aria-selected', 'false');
+      (t as HTMLElement).tabIndex = -1;
+    });
+    tabBtn.addClass('is-active');
+    tabBtn.setAttribute('aria-selected', 'true');
+    tabBtn.tabIndex = 0;
+    this.renderTabContent(contentContainer, tabId);
   }
 
   private renderTabContent(container: HTMLElement, tabId: string): void {
@@ -310,10 +348,12 @@ export class AssessmentModal extends Modal {
       const barFill = barBg.createDiv({ cls: 'cultivator-dimension-bar-fill' });
       barFill.style.width = `${dim.score}%`;
 
-      if (dim.score >= 80) barFill.addClass('cultivator-bar-excellent');
-      else if (dim.score >= 60) barFill.addClass('cultivator-bar-good');
-      else if (dim.score >= 40) barFill.addClass('cultivator-bar-fair');
-      else barFill.addClass('cultivator-bar-poor');
+      let barLabel: string;
+      if (dim.score >= 80) { barFill.addClass('cultivator-bar-excellent'); barLabel = 'Excellent'; }
+      else if (dim.score >= 60) { barFill.addClass('cultivator-bar-good'); barLabel = 'Good'; }
+      else if (dim.score >= 40) { barFill.addClass('cultivator-bar-fair'); barLabel = 'Fair'; }
+      else { barFill.addClass('cultivator-bar-poor'); barLabel = 'Poor'; }
+      dimCard.createEl('span', { cls: 'cultivator-dimension-bar-label', text: barLabel });
 
       // Feedback
       if (dim.feedback) {

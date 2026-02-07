@@ -224,18 +224,46 @@
 
 .cultivator-bar-excellent {
   background: var(--color-green);
+  background-image: none;
 }
 
 .cultivator-bar-good {
   background: var(--color-blue);
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 4px,
+    rgba(255, 255, 255, 0.15) 4px,
+    rgba(255, 255, 255, 0.15) 8px
+  );
 }
 
 .cultivator-bar-fair {
   background: var(--color-yellow);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 4px,
+    rgba(0, 0, 0, 0.1) 4px,
+    rgba(0, 0, 0, 0.1) 8px
+  );
 }
 
 .cultivator-bar-poor {
   background: var(--color-red);
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 3px,
+    rgba(255, 255, 255, 0.2) 3px,
+    rgba(255, 255, 255, 0.2) 6px
+  );
+}
+
+.cultivator-dimension-bar-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
 }
 
 /* Recommendation - Inline Layout */
