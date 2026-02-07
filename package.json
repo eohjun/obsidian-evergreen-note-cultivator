@@ -20,7 +20,7 @@
   "author": "eohjun",
   "license": "MIT",
   "devDependencies": {
-    "builtin-modules": "^3.3.0",
+    "builtin-modules": "^5.0.0",
     "esbuild": "^0.27.2",
     "obsidian": "^1.11.0",
     "typescript": "^5.9.3"
