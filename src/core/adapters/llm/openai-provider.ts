@@ -128,6 +128,14 @@ export class OpenAIProvider extends BaseProvider {
 
       const content = response.choices?.[0]?.message?.content ?? '';
 
+      if (!content) {
+        return {
+          success: false,
+          content: '',
+          error: 'OpenAI returned empty response content',
+        };
+      }
+
       return {
         success: true,
         content,

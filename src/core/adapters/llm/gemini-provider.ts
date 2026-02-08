@@ -122,6 +122,14 @@ export class GeminiProvider extends BaseProvider {
       const content =
         response.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') ?? '';
 
+      if (!content) {
+        return {
+          success: false,
+          content: '',
+          error: 'Gemini returned empty response content',
+        };
+      }
+
       return {
         success: true,
         content,

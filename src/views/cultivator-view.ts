@@ -70,7 +70,10 @@ export class CultivatorView extends ItemView {
   }
 
   async onClose(): Promise<void> {
-    // Cleanup
+    this.currentFile = null;
+    this.lastAssessment = null;
+    this.dynamicContentEl = null;
+    this.isLoadedFromNote = false;
   }
 
   private async onFileOpen(file: TFile | null): Promise<void> {
