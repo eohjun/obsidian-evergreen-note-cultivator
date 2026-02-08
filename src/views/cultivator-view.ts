@@ -5,8 +5,9 @@
 
 import { ItemView, WorkspaceLeaf, TFile, Notice } from 'obsidian';
 import type EvergreenNoteCultivatorPlugin from '../main';
-import { MaturityLevel, QualityScore, NoteAssessment, type NoteData } from '../core/domain';
+import { MaturityLevel, QualityScore, NoteAssessment, type NoteData, type AssessmentRecord, type ScoreDelta, type QualityDimensionType } from '../core/domain';
 import { AssessNoteQualityUseCase, UpdateMaturityUseCase, type AssessNoteQualityOutput } from '../core/application';
+import { AssessmentModal } from './assessment-modal';
 
 export const VIEW_TYPE_CULTIVATOR = 'evergreen-cultivator-view';
 
@@ -19,6 +20,7 @@ export class CultivatorView extends ItemView {
   private plugin: EvergreenNoteCultivatorPlugin;
   private currentFile: TFile | null = null;
   private lastAssessment: AssessNoteQualityOutput | null = null;
+  private lastDelta: ScoreDelta | null = null;
   private dynamicContentEl: HTMLElement | null = null;
   private isLoadedFromNote: boolean = false;
 
@@ -72,6 +74,7 @@ export class CultivatorView extends ItemView {
   async onClose(): Promise<void> {
     this.currentFile = null;
     this.lastAssessment = null;
+    this.lastDelta = null;
     this.dynamicContentEl = null;
     this.isLoadedFromNote = false;
   }
@@ -79,6 +82,7 @@ export class CultivatorView extends ItemView {
   private async onFileOpen(file: TFile | null): Promise<void> {
     this.currentFile = file;
     this.lastAssessment = null;
+    this.lastDelta = null;
     this.isLoadedFromNote = false;
 
     if (!file) {
@@ -323,6 +327,15 @@ export class CultivatorView extends ItemView {
 
       if (result.assessment) {
         this.lastAssessment = result;
+
+        // Build AssessmentRecord and save to history
+        if (this.plugin.settings.history.enabled) {
+          const record = this.buildAssessmentRecord(result.assessment);
+          const historyService = this.plugin.getHistoryService();
+          this.lastDelta = historyService.calculateDelta(this.currentFile.path, record);
+          await historyService.addRecord(record);
+        }
+
         this.renderDynamicContent();
         new Notice('✅ Assessment complete!');
       } else {
@@ -347,14 +360,18 @@ export class CultivatorView extends ItemView {
 
     // Overall score
     const scoreEl = resultsEl.createDiv({ cls: 'cultivator-score' });
-    scoreEl.createEl('span', { cls: 'cultivator-score-value', text: `${qualityScore.totalScore}pts` });
+    const scoreValueEl = scoreEl.createEl('span', { cls: 'cultivator-score-value', text: `${qualityScore.totalScore}pts` });
+    if (this.lastDelta && this.lastDelta.totalDelta !== 0) {
+      this.renderDeltaBadge(scoreValueEl, this.lastDelta.totalDelta);
+    }
     scoreEl.createEl('span', { cls: 'cultivator-score-grade', text: qualityScore.getGrade() });
 
     // Dimension scores
     const dimensionsEl = resultsEl.createDiv({ cls: 'cultivator-dimensions' });
 
     qualityScore.getAllDimensions().forEach(dim => {
-      this.renderDimensionBar(dimensionsEl, dim);
+      const dimDelta = this.lastDelta?.dimensionDeltas[dim.type as QualityDimensionType] ?? null;
+      this.renderDimensionBar(dimensionsEl, dim, dimDelta);
     });
 
     // Recommended maturity with update button (inline layout)
@@ -430,13 +447,17 @@ export class CultivatorView extends ItemView {
 
   private renderDimensionBar(
     container: HTMLElement,
-    dim: { icon: string; displayName: string; score: number }
+    dim: { icon: string; displayName: string; score: number },
+    delta?: number | null,
   ): void {
     const barContainer = container.createDiv({ cls: 'cultivator-dimension' });
 
     const labelEl = barContainer.createDiv({ cls: 'cultivator-dimension-label' });
     labelEl.createEl('span', { text: `${dim.icon} ${dim.displayName}` });
-    labelEl.createEl('span', { text: `${dim.score}pts` });
+    const scoreSpan = labelEl.createEl('span', { text: `${dim.score}pts` });
+    if (delta && delta !== 0) {
+      this.renderDeltaBadge(scoreSpan, delta);
+    }
 
     const barBg = barContainer.createDiv({ cls: 'cultivator-dimension-bar-bg' });
     const barFill = barBg.createDiv({ cls: 'cultivator-dimension-bar-fill' });
@@ -505,6 +526,48 @@ export class CultivatorView extends ItemView {
         exampleEl.createEl('span', { cls: 'cultivator-example-label', text: '💡 Example: ' });
         exampleEl.createEl('span', { text: imp.example });
       }
+
+      // Details link → opens modal on Dimensions tab
+      const detailsLink = itemEl.createEl('a', {
+        cls: 'cultivator-details-link',
+        text: 'Details →',
+      });
+      detailsLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (this.currentFile) {
+          const modal = new AssessmentModal(this.app, this.plugin, this.currentFile);
+          modal.open();
+        }
+      });
+    });
+  }
+
+  // ============================================
+  // History Helpers
+  // ============================================
+
+  private buildAssessmentRecord(assessment: NoteAssessment): AssessmentRecord {
+    const dimensionScores: Record<string, number> = {};
+    for (const dim of assessment.qualityScore.getAllDimensions()) {
+      dimensionScores[dim.type] = dim.score;
+    }
+
+    return {
+      id: assessment.id,
+      notePath: assessment.notePath,
+      totalScore: assessment.qualityScore.totalScore,
+      dimensionScores: dimensionScores as Record<QualityDimensionType, number>,
+      maturityLevel: assessment.currentMaturity.level,
+      assessedAt: assessment.assessedAt.getTime(),
+    };
+  }
+
+  private renderDeltaBadge(container: HTMLElement, delta: number): void {
+    if (delta === 0) return;
+
+    container.createEl('span', {
+      cls: `cultivator-delta ${delta > 0 ? 'cultivator-delta-positive' : 'cultivator-delta-negative'}`,
+      text: delta > 0 ? `+${delta}` : `${delta}`,
     });
   }
 

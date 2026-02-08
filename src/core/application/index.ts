@@ -4,6 +4,7 @@ export {
   SuggestConnectionsUseCase,
   UpdateMaturityUseCase,
   GetGrowthGuideUseCase,
+  GetDimensionImprovementUseCase,
 } from './use-cases';
 export type {
   AssessNoteQualityInput,
@@ -14,6 +15,9 @@ export type {
   UpdateMaturityOutput,
   GetGrowthGuideInput,
   GetGrowthGuideOutput,
+  DimensionImprovementInput,
+  DimensionImprovementOutput,
+  DimensionImprovementAction,
 } from './use-cases';
 
 // Services
@@ -23,5 +27,6 @@ export {
   getAIService,
   updateAIServiceSettings,
   resetAIService,
+  AssessmentHistoryService,
 } from './services';
 export type { AISettings } from './services';

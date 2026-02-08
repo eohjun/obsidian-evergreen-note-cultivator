@@ -5,15 +5,17 @@
 
 import { App, Modal, Notice, TFile } from 'obsidian';
 import type EvergreenNoteCultivatorPlugin from '../main';
-import { MaturityLevel, type NoteData, type NoteSummary } from '../core/domain';
+import { MaturityLevel, NoteAssessment, type NoteData, type NoteSummary, type AssessmentRecord, type ScoreDelta, type QualityDimensionType } from '../core/domain';
 import {
   AssessNoteQualityUseCase,
   SuggestConnectionsUseCase,
   UpdateMaturityUseCase,
   GetGrowthGuideUseCase,
+  GetDimensionImprovementUseCase,
   type AssessNoteQualityOutput,
   type SuggestConnectionsOutput,
   type GetGrowthGuideOutput,
+  type DimensionImprovementAction,
 } from '../core/application';
 
 type ModalMode = 'assess' | 'growth-guide' | 'update-maturity';
@@ -25,6 +27,7 @@ export class AssessmentModal extends Modal {
   private assessment: AssessNoteQualityOutput | null = null;
   private connections: SuggestConnectionsOutput | null = null;
   private growthGuide: GetGrowthGuideOutput | null = null;
+  private lastDelta: ScoreDelta | null = null;
   private isLoading: boolean = false;
 
   constructor(
@@ -53,6 +56,7 @@ export class AssessmentModal extends Modal {
     this.assessment = null;
     this.connections = null;
     this.growthGuide = null;
+    this.lastDelta = null;
   }
 
   private renderHeader(): void {
@@ -145,6 +149,14 @@ export class AssessmentModal extends Modal {
         existingLinks,
         backlinks,
       });
+
+      // Save history and calculate delta
+      if (this.assessment.assessment && this.plugin.settings.history.enabled) {
+        const record = this.buildAssessmentRecord(this.assessment.assessment);
+        const historyService = this.plugin.getHistoryService();
+        this.lastDelta = historyService.calculateDelta(this.file.path, record);
+        await historyService.addRecord(record);
+      }
 
       // Get growth guide if assessment succeeded
       if (this.assessment.assessment) {
@@ -296,6 +308,9 @@ export class AssessmentModal extends Modal {
     const scoreCard = container.createDiv({ cls: 'assessment-score-card' });
     const scoreCircle = scoreCard.createDiv({ cls: 'assessment-score-circle' });
     scoreCircle.createEl('span', { text: `${assessment.qualityScore.totalScore}` });
+    if (this.lastDelta && this.lastDelta.totalDelta !== 0) {
+      this.renderDeltaBadge(scoreCircle, this.lastDelta.totalDelta);
+    }
 
     const scoreInfo = scoreCard.createDiv({ cls: 'assessment-score-info' });
     scoreInfo.createEl('h4', { text: `Grade: ${assessment.qualityScore.getGrade()}` });
@@ -341,7 +356,11 @@ export class AssessmentModal extends Modal {
       const headerEl = dimCard.createDiv({ cls: 'assessment-dimension-header' });
       const titleEl = headerEl.createDiv({ cls: 'assessment-dimension-title' });
       titleEl.createEl('span', { text: `${dim.icon} ${dim.displayName}` });
-      headerEl.createEl('span', { cls: 'assessment-dimension-score', text: `${dim.score}pts` });
+      const scoreEl = headerEl.createEl('span', { cls: 'assessment-dimension-score', text: `${dim.score}pts` });
+      const dimDelta = this.lastDelta?.dimensionDeltas[dim.type as QualityDimensionType];
+      if (dimDelta && dimDelta !== 0) {
+        this.renderDeltaBadge(scoreEl, dimDelta);
+      }
 
       // Progress bar
       const barBg = dimCard.createDiv({ cls: 'cultivator-dimension-bar-bg' });
@@ -358,6 +377,27 @@ export class AssessmentModal extends Modal {
       // Feedback
       if (dim.feedback) {
         dimCard.createEl('p', { cls: 'assessment-dimension-feedback', text: dim.feedback });
+      }
+
+      // Improve button for low-scoring dimensions
+      if (dim.score < 70) {
+        const aiService = this.plugin.getAIService();
+        const isAIAvailable = aiService?.isAvailable() ?? false;
+
+        const improveBtn = dimCard.createEl('button', {
+          cls: 'cultivator-improve-btn',
+          text: '🔧 Improve',
+        });
+
+        if (!isAIAvailable) {
+          improveBtn.disabled = true;
+          improveBtn.title = 'AI settings required';
+        }
+
+        improveBtn.addEventListener('click', async () => {
+          if (improveBtn.disabled) return;
+          await this.runDimensionImprovement(dim.type as QualityDimensionType, dim.score, dim.feedback, dimCard, improveBtn);
+        });
       }
     });
   }
@@ -450,13 +490,124 @@ export class AssessmentModal extends Modal {
         linkEl.createEl('code', { text: conn.linkSuggestion });
       }
 
-      connItem.addEventListener('click', () => {
+      // Add Link button
+      const addLinkBtn = connItem.createEl('button', {
+        cls: 'cultivator-add-link-btn',
+        text: '+ Add Link',
+      });
+
+      // Check if already linked
+      this.checkAndUpdateLinkButton(addLinkBtn, conn.targetNote);
+
+      addLinkBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (addLinkBtn.hasClass('is-linked')) return;
+
+        addLinkBtn.textContent = '...';
+        addLinkBtn.disabled = true;
+
+        const result = await this.insertConnectionLink(
+          conn.targetNote,
+          conn.relationshipType,
+          conn.reason,
+        );
+
+        if (result.alreadyLinked) {
+          addLinkBtn.textContent = '✓ Linked';
+          addLinkBtn.addClass('is-linked');
+        } else if (result.success) {
+          addLinkBtn.textContent = '✓ Added';
+          addLinkBtn.addClass('is-linked');
+          new Notice(`🔗 Link added: [[${conn.targetNote}]]`);
+        } else {
+          addLinkBtn.textContent = '✗ Failed';
+          addLinkBtn.disabled = false;
+        }
+      });
+
+      // Navigate on info click (not on button click)
+      info.addEventListener('click', () => {
         const targetFile = this.app.metadataCache.getFirstLinkpathDest(conn.targetNote, this.file.path);
         if (targetFile) {
           this.app.workspace.getLeaf().openFile(targetFile);
         }
       });
     });
+  }
+
+  private async checkAndUpdateLinkButton(btn: HTMLButtonElement, targetNote: string): Promise<void> {
+    try {
+      const content = await this.app.vault.cachedRead(this.file);
+      if (content.includes(`[[${targetNote}]]`)) {
+        btn.textContent = '✓ Linked';
+        btn.addClass('is-linked');
+      }
+    } catch {
+      // Ignore read errors
+    }
+  }
+
+  private async insertConnectionLink(
+    targetNote: string,
+    relationshipType: string,
+    reason: string,
+  ): Promise<{ success: boolean; alreadyLinked: boolean }> {
+    try {
+      const content = await this.app.vault.read(this.file);
+
+      // Duplicate check
+      if (content.includes(`[[${targetNote}]]`)) {
+        return { success: true, alreadyLinked: true };
+      }
+
+      const linkLine = `- [[${targetNote}]] • ${relationshipType} — ${reason}`;
+
+      // Find "연결된 노트" or "Connected Notes" section
+      const connSectionMatch = content.match(/^###\s*(?:🔗\s*)?(?:연결된 노트|연결된 생각|Connected Notes)\s*$/m);
+
+      let newContent: string;
+      if (connSectionMatch && connSectionMatch.index !== undefined) {
+        const insertPos = this.findSectionEnd(content, connSectionMatch.index);
+        newContent = content.slice(0, insertPos) + linkLine + '\n' + content.slice(insertPos);
+      } else {
+        // Append to end of note
+        newContent = content.replace(/\s+$/, '') + '\n\n' + linkLine + '\n';
+      }
+
+      await this.app.vault.modify(this.file, newContent);
+      return { success: true, alreadyLinked: false };
+    } catch (error) {
+      console.error('Failed to insert connection link:', error);
+      return { success: false, alreadyLinked: false };
+    }
+  }
+
+  private findSectionEnd(content: string, sectionStart: number): number {
+    const lines = content.split('\n');
+    let charCount = 0;
+    let sectionLineIdx = -1;
+
+    // Find the line index of the section header
+    for (let i = 0; i < lines.length; i++) {
+      if (charCount <= sectionStart && sectionStart < charCount + lines[i].length + 1) {
+        sectionLineIdx = i;
+        break;
+      }
+      charCount += lines[i].length + 1; // +1 for newline
+    }
+
+    if (sectionLineIdx === -1) return content.length;
+
+    // Find end: next heading or end of content
+    let endCharCount = charCount + lines[sectionLineIdx].length + 1;
+    for (let i = sectionLineIdx + 1; i < lines.length; i++) {
+      if (lines[i].match(/^#{1,3}\s/)) {
+        return endCharCount;
+      }
+      endCharCount += lines[i].length + 1;
+    }
+
+    return content.length;
   }
 
   private renderGrowthTab(container: HTMLElement): void {
@@ -511,6 +662,106 @@ export class AssessmentModal extends Modal {
       effortSection.createEl('h4', { text: '⏱️ Estimated Effort' });
       effortSection.createEl('p', { text: effortTexts[guide.estimatedEffort] ?? guide.estimatedEffort });
     }
+  }
+
+  private async runDimensionImprovement(
+    dimension: QualityDimensionType,
+    currentScore: number,
+    feedback: string,
+    cardEl: HTMLElement,
+    btn: HTMLButtonElement,
+  ): Promise<void> {
+    const aiService = this.plugin.getAIService();
+    const provider = aiService?.getCurrentProvider();
+    if (!provider) {
+      new Notice('AI provider not available.');
+      return;
+    }
+
+    btn.textContent = '⏳ Analyzing...';
+    btn.disabled = true;
+
+    try {
+      const noteData = await this.buildNoteData();
+      const useCase = new GetDimensionImprovementUseCase(provider);
+
+      const result = await useCase.execute({
+        note: noteData,
+        dimension,
+        currentScore,
+        feedback,
+      });
+
+      if (result.error) {
+        new Notice(`❌ ${result.error}`);
+        btn.textContent = '🔧 Improve';
+        btn.disabled = false;
+        return;
+      }
+
+      // Remove button and render actions
+      btn.remove();
+      this.renderImprovementActions(cardEl, result.actions);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      new Notice(`❌ ${message}`);
+      btn.textContent = '🔧 Improve';
+      btn.disabled = false;
+    }
+  }
+
+  private renderImprovementActions(container: HTMLElement, actions: DimensionImprovementAction[]): void {
+    if (actions.length === 0) return;
+
+    const actionsEl = container.createDiv({ cls: 'cultivator-improve-actions' });
+
+    actions.forEach((action, idx) => {
+      const itemEl = actionsEl.createDiv({ cls: 'cultivator-improve-action-item' });
+
+      const headerEl = itemEl.createDiv({ cls: 'cultivator-improve-action-header' });
+      headerEl.createEl('span', {
+        cls: 'cultivator-improvement-number',
+        text: `${idx + 1}`,
+      });
+      headerEl.createEl('span', { text: action.action });
+
+      if (action.location) {
+        itemEl.createEl('p', {
+          cls: 'assessment-dimension-feedback',
+          text: `📍 ${action.location}`,
+        });
+      }
+
+      itemEl.createEl('p', {
+        cls: 'cultivator-improve-action-impact',
+        text: `→ ${action.expectedImpact}`,
+      });
+    });
+  }
+
+  private buildAssessmentRecord(assessment: NoteAssessment): AssessmentRecord {
+    const dimensionScores: Record<string, number> = {};
+    for (const dim of assessment.qualityScore.getAllDimensions()) {
+      dimensionScores[dim.type] = dim.score;
+    }
+
+    return {
+      id: assessment.id,
+      notePath: assessment.notePath,
+      totalScore: assessment.qualityScore.totalScore,
+      dimensionScores: dimensionScores as Record<QualityDimensionType, number>,
+      maturityLevel: assessment.currentMaturity.level,
+      assessedAt: assessment.assessedAt.getTime(),
+    };
+  }
+
+  private renderDeltaBadge(container: HTMLElement, delta: number): void {
+    if (delta === 0) return;
+
+    container.createEl('span', {
+      cls: `cultivator-delta ${delta > 0 ? 'cultivator-delta-positive' : 'cultivator-delta-negative'}`,
+      text: delta > 0 ? `+${delta}` : `${delta}`,
+    });
   }
 
   private async updateMaturity(newMaturity: MaturityLevel): Promise<void> {

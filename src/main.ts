@@ -12,7 +12,9 @@ import {
   initializeAIService,
   updateAIServiceSettings,
   getAIService,
+  AssessmentHistoryService,
 } from './core/application';
+import type { AssessmentRecord } from './core/domain';
 import {
   ClaudeProvider,
   OpenAIProvider,
@@ -30,6 +32,7 @@ export default class EvergreenNoteCultivatorPlugin extends Plugin {
   settings!: PluginSettings;
   private aiService: AIService | null = null;
   private noteRepository!: ObsidianNoteRepository;
+  private historyService!: AssessmentHistoryService;
 
   async onload(): Promise<void> {
     await this.loadSettings();
@@ -39,6 +42,21 @@ export default class EvergreenNoteCultivatorPlugin extends Plugin {
 
     // Initialize AI Service
     this.initializeAIService();
+
+    // Initialize Assessment History Service
+    this.historyService = new AssessmentHistoryService(
+      this.settings.history.maxPerNote,
+      async () => {
+        const data = await this.loadData();
+        return data?.assessmentHistory ?? null;
+      },
+      async (historyData: Record<string, AssessmentRecord[]>) => {
+        const data = (await this.loadData()) ?? {};
+        data.assessmentHistory = historyData;
+        await this.saveData(data);
+      },
+    );
+    await this.historyService.initialize();
 
     // Register view
     this.registerView(
@@ -107,6 +125,7 @@ export default class EvergreenNoteCultivatorPlugin extends Plugin {
       },
       display: { ...DEFAULT_SETTINGS.display },
       assessment: { ...DEFAULT_SETTINGS.assessment },
+      history: { ...DEFAULT_SETTINGS.history },
     };
 
     if (loaded) {
@@ -140,6 +159,11 @@ export default class EvergreenNoteCultivatorPlugin extends Plugin {
         this.settings.assessment = { ...this.settings.assessment, ...loaded.assessment };
       }
 
+      // Merge history settings
+      if (loaded.history) {
+        this.settings.history = { ...this.settings.history, ...loaded.history };
+      }
+
       // Merge frontmatter key
       if (loaded.frontmatterKey) {
         this.settings.frontmatterKey = loaded.frontmatterKey;
@@ -148,7 +172,13 @@ export default class EvergreenNoteCultivatorPlugin extends Plugin {
   }
 
   async saveSettings(): Promise<void> {
-    await this.saveData(this.settings);
+    // Preserve assessmentHistory when saving settings
+    const existing = (await this.loadData()) ?? {};
+    const dataToSave = {
+      ...this.settings,
+      assessmentHistory: existing.assessmentHistory,
+    };
+    await this.saveData(dataToSave);
     this.updateAIService();
   }
 
@@ -217,6 +247,10 @@ export default class EvergreenNoteCultivatorPlugin extends Plugin {
 
   getNoteRepository(): ObsidianNoteRepository {
     return this.noteRepository;
+  }
+
+  getHistoryService(): AssessmentHistoryService {
+    return this.historyService;
   }
 
   async activateView(): Promise<void> {

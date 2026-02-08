@@ -37,12 +37,21 @@ export interface AssessmentSettings {
 }
 
 /**
+ * 이력 설정
+ */
+export interface HistorySettings {
+  maxPerNote: number;
+  enabled: boolean;
+}
+
+/**
  * 플러그인 설정
  */
 export interface PluginSettings {
   ai: AISettings;
   display: DisplaySettings;
   assessment: AssessmentSettings;
+  history: HistorySettings;
   frontmatterKey: string;
 }
 
@@ -67,6 +76,10 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     showDetailedFeedback: true,
     enableSplitSuggestions: true,
     enableConnectionSuggestions: true,
+  },
+  history: {
+    maxPerNote: 5,
+    enabled: true,
   },
   frontmatterKey: 'growth-stage',
 };

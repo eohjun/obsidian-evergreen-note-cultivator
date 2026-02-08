@@ -6,3 +6,8 @@ export type {
   ConnectionSuggestion,
   GrowthGuide,
 } from './note-assessment';
+
+export type {
+  AssessmentRecord,
+  ScoreDelta,
+} from './assessment-record';

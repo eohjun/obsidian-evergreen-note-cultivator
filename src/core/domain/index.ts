@@ -17,6 +17,8 @@ export type {
   SplitSuggestion,
   ConnectionSuggestion,
   GrowthGuide,
+  AssessmentRecord,
+  ScoreDelta,
 } from './entities';
 
 // Interfaces (Ports)

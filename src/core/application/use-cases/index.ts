@@ -29,3 +29,12 @@ export type {
   GetGrowthGuideInput,
   GetGrowthGuideOutput,
 } from './get-growth-guide';
+
+export {
+  GetDimensionImprovementUseCase,
+} from './get-dimension-improvement';
+export type {
+  DimensionImprovementInput,
+  DimensionImprovementOutput,
+  DimensionImprovementAction,
+} from './get-dimension-improvement';
