@@ -29,7 +29,7 @@ export const AI_PROVIDERS: Record<LLMProviderType, AIProviderConfig> = {
     name: 'Anthropic Claude',
     displayName: 'Claude',
     endpoint: 'https://api.anthropic.com/v1',
-    defaultModel: 'claude-sonnet-4-5-20250929',
+    defaultModel: 'claude-sonnet-4-6',
   },
   gemini: {
     id: 'gemini',
@@ -37,7 +37,7 @@ export const AI_PROVIDERS: Record<LLMProviderType, AIProviderConfig> = {
     displayName: 'Gemini',
     endpoint: 'https://generativelanguage.googleapis.com/v1beta',
     apiKeyPrefix: 'AIza',
-    defaultModel: 'gemini-3-flash-preview',
+    defaultModel: 'gemini-2.5-flash',
   },
   openai: {
     id: 'openai',
@@ -45,7 +45,7 @@ export const AI_PROVIDERS: Record<LLMProviderType, AIProviderConfig> = {
     displayName: 'OpenAI',
     endpoint: 'https://api.openai.com/v1',
     apiKeyPrefix: 'sk-',
-    defaultModel: 'gpt-5.2',
+    defaultModel: 'gpt-5-mini',
   },
   grok: {
     id: 'grok',
@@ -58,23 +58,35 @@ export const AI_PROVIDERS: Record<LLMProviderType, AIProviderConfig> = {
 
 export const MODEL_CONFIGS: Record<string, ModelConfig> = {
   // Claude Models
-  'claude-sonnet-4-5-20250929': {
-    id: 'claude-sonnet-4-5-20250929',
-    displayName: 'Claude Sonnet 4.5',
+  'claude-opus-4-6': {
+    id: 'claude-opus-4-6',
+    displayName: 'Claude Opus 4.6',
     provider: 'claude',
-    maxTokens: 16384,
+    maxTokens: 128000,
   },
-  'claude-3-5-haiku-20241022': {
-    id: 'claude-3-5-haiku-20241022',
-    displayName: 'Claude 3.5 Haiku',
+  'claude-sonnet-4-6': {
+    id: 'claude-sonnet-4-6',
+    displayName: 'Claude Sonnet 4.6',
     provider: 'claude',
-    maxTokens: 8192,
+    maxTokens: 64000,
+  },
+  'claude-haiku-4-5-20251001': {
+    id: 'claude-haiku-4-5-20251001',
+    displayName: 'Claude Haiku 4.5',
+    provider: 'claude',
+    maxTokens: 64000,
   },
 
   // Gemini Models
-  'gemini-3-flash-preview': {
-    id: 'gemini-3-flash-preview',
-    displayName: 'Gemini 3 Flash',
+  'gemini-3.1-pro-preview': {
+    id: 'gemini-3.1-pro-preview',
+    displayName: 'Gemini 3.1 Pro',
+    provider: 'gemini',
+    maxTokens: 65536,
+  },
+  'gemini-2.5-flash': {
+    id: 'gemini-2.5-flash',
+    displayName: 'Gemini 2.5 Flash',
     provider: 'gemini',
     maxTokens: 65536,
   },
@@ -86,23 +98,35 @@ export const MODEL_CONFIGS: Record<string, ModelConfig> = {
   },
 
   // OpenAI Models
-  'gpt-5.2': {
-    id: 'gpt-5.2',
-    displayName: 'GPT-5.2',
+  'gpt-5.4': {
+    id: 'gpt-5.4',
+    displayName: 'GPT-5.4',
     provider: 'openai',
-    maxTokens: 32768,
+    maxTokens: 128000,
   },
-  'gpt-4o-mini': {
-    id: 'gpt-4o-mini',
-    displayName: 'GPT-4o Mini',
+  'gpt-5-mini': {
+    id: 'gpt-5-mini',
+    displayName: 'GPT-5 Mini',
     provider: 'openai',
-    maxTokens: 16384,
+    maxTokens: 128000,
+  },
+  'gpt-5-nano': {
+    id: 'gpt-5-nano',
+    displayName: 'GPT-5 Nano',
+    provider: 'openai',
+    maxTokens: 128000,
   },
 
   // Grok Models
   'grok-4-1-fast': {
     id: 'grok-4-1-fast',
     displayName: 'Grok 4.1 Fast',
+    provider: 'grok',
+    maxTokens: 16384,
+  },
+  'grok-4-1-fast-non-reasoning': {
+    id: 'grok-4-1-fast-non-reasoning',
+    displayName: 'Grok 4.1 Fast (Non-Reasoning)',
     provider: 'grok',
     maxTokens: 16384,
   },
