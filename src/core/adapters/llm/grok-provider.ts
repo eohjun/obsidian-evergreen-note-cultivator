@@ -1,33 +1,13 @@
 /**
- * Grok Provider
- * xAI Grok API implementation (OpenAI-compatible)
+ * Grok Provider — 공유 빌더/파서 사용
  *
- * Evergreen Note Cultivator - Socratic Challenger 패턴 재사용
+ * 추가: Reasoning 모델 지원 (grok-4-1-fast)
  */
 
 import { BaseProvider } from './base-provider';
 import type { LLMProviderType } from '../../domain/interfaces/llm-provider.interface';
 import type { LLMMessage, LLMResponse, LLMGenerateOptions } from '../../domain/interfaces/llm-provider.interface';
-
-interface GrokMessage {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-}
-
-interface GrokRequest {
-  model: string;
-  messages: GrokMessage[];
-  max_tokens?: number;
-  temperature?: number;
-  top_p?: number;
-  stop?: string[];
-}
-
-interface GrokResponse {
-  choices: { message: { content: string } }[];
-  usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
-  error?: { message: string; type: string };
-}
+import { buildGrokBody, parseGrokResponse } from 'obsidian-llm-shared';
 
 export class GrokProvider extends BaseProvider {
   readonly providerType: LLMProviderType = 'grok';
@@ -35,20 +15,18 @@ export class GrokProvider extends BaseProvider {
 
   async testApiKey(apiKey: string): Promise<boolean> {
     try {
-      const response = await this.makeRequest<GrokResponse>({
+      const body = buildGrokBody(
+        [{ role: 'user', content: 'Hello' }],
+        this.config.defaultModel,
+        { maxTokens: 10 }
+      );
+      const json = await this.makeRequest<Record<string, unknown>>({
         url: `${this.config.endpoint}/chat/completions`,
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: this.config.defaultModel,
-          messages: [{ role: 'user', content: 'Hello' }],
-          max_tokens: 10,
-        }),
+        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
       });
-      return !response.error && response.choices && response.choices.length > 0;
+      return parseGrokResponse(json).success;
     } catch {
       return false;
     }
@@ -59,63 +37,32 @@ export class GrokProvider extends BaseProvider {
       return { success: false, content: '', error: 'API 키가 설정되지 않았습니다.' };
     }
 
-    const grokMessages: GrokMessage[] = messages.map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-    }));
-
-    const requestBody: GrokRequest = {
-      model: this.modelId,
-      messages: grokMessages,
-      max_tokens: options?.maxTokens ?? 4096,
-      temperature: options?.temperature ?? 0.7,
-    };
-
-    if (options?.topP !== undefined) {
-      requestBody.top_p = options.topP;
-    }
-
-    if (options?.stopSequences) {
-      requestBody.stop = options.stopSequences;
-    }
-
-    // Debug logging
-    console.log('[Evergreen Cultivator] Grok API Request:', {
-      model: this.modelId,
-      messagesCount: grokMessages.length,
-    });
-
     try {
-      const response = await this.makeRequest<GrokResponse>({
-        url: `${this.config.endpoint}/chat/completions`,
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
+      const body = buildGrokBody(messages, this.modelId, {
+        maxTokens: options?.maxTokens,
+        temperature: options?.temperature,
       });
 
-      if (response.error) {
-        return {
-          success: false,
-          content: '',
-          error: response.error.message,
-        };
-      }
+      const json = await this.makeRequest<Record<string, unknown>>({
+        url: `${this.config.endpoint}/chat/completions`,
+        method: 'POST',
+        headers: { Authorization: `Bearer ${this.apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
 
-      const content = response.choices?.[0]?.message?.content ?? '';
+      const result = parseGrokResponse(json);
+      if (!result.success) {
+        return { success: false, content: '', error: result.error };
+      }
 
       return {
         success: true,
-        content,
-        usage: response.usage
-          ? {
-              inputTokens: response.usage.prompt_tokens,
-              outputTokens: response.usage.completion_tokens,
-              totalTokens: response.usage.total_tokens,
-            }
-          : undefined,
+        content: result.text,
+        usage: {
+          inputTokens: result.usage.inputTokens,
+          outputTokens: result.usage.outputTokens,
+          totalTokens: result.usage.totalTokens,
+        },
       };
     } catch (error) {
       return this.handleError(error);

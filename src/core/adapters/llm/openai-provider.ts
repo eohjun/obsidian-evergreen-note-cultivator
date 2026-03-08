@@ -1,33 +1,13 @@
 /**
- * OpenAI Provider
- * OpenAI GPT API implementation
+ * OpenAI Provider — 공유 빌더/파서 사용
  *
- * Evergreen Note Cultivator - Socratic Challenger 패턴 재사용
+ * 수정된 버그: temperature가 reasoning 모델에도 전송되던 문제 해결
  */
 
 import { BaseProvider } from './base-provider';
 import type { LLMProviderType } from '../../domain/interfaces/llm-provider.interface';
 import type { LLMMessage, LLMResponse, LLMGenerateOptions } from '../../domain/interfaces/llm-provider.interface';
-
-interface OpenAIMessage {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-}
-
-interface OpenAIRequest {
-  model: string;
-  messages: OpenAIMessage[];
-  max_tokens?: number;
-  temperature?: number;
-  top_p?: number;
-  stop?: string[];
-}
-
-interface OpenAIResponse {
-  choices: { message: { content: string } }[];
-  usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
-  error?: { message: string; type: string };
-}
+import { buildOpenAIBody, parseOpenAIResponse } from 'obsidian-llm-shared';
 
 export class OpenAIProvider extends BaseProvider {
   readonly providerType: LLMProviderType = 'openai';
@@ -35,30 +15,18 @@ export class OpenAIProvider extends BaseProvider {
 
   async testApiKey(apiKey: string): Promise<boolean> {
     try {
-      const model = this.config.defaultModel;
-      const isReasoningModel = model.startsWith('gpt-5') || model.startsWith('o1') || model.startsWith('o3');
-
-      const requestBody: Record<string, unknown> = {
-        model,
-        messages: [{ role: 'user', content: 'Hello' }],
-      };
-
-      if (isReasoningModel) {
-        requestBody.max_completion_tokens = 10;
-      } else {
-        requestBody.max_tokens = 10;
-      }
-
-      const response = await this.makeRequest<OpenAIResponse>({
+      const body = buildOpenAIBody(
+        [{ role: 'user', content: 'Hello' }],
+        this.config.defaultModel,
+        { maxTokens: 10 }
+      );
+      const json = await this.makeRequest<Record<string, unknown>>({
         url: `${this.config.endpoint}/chat/completions`,
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
+        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
       });
-      return !response.error && response.choices && response.choices.length > 0;
+      return parseOpenAIResponse(json).success;
     } catch {
       return false;
     }
@@ -69,83 +37,32 @@ export class OpenAIProvider extends BaseProvider {
       return { success: false, content: '', error: 'API 키가 설정되지 않았습니다.' };
     }
 
-    const openaiMessages: OpenAIMessage[] = messages.map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-    }));
-
-    // Check if this is a reasoning model (gpt-5.x, o1, o3)
-    const isReasoningModel = this.modelId.startsWith('gpt-5') ||
-                             this.modelId.startsWith('o1') ||
-                             this.modelId.startsWith('o3');
-
-    const requestBody: Record<string, unknown> = {
-      model: this.modelId,
-      messages: openaiMessages,
-      temperature: options?.temperature ?? 0.7,
-    };
-
-    // Reasoning models use max_completion_tokens instead of max_tokens
-    if (isReasoningModel) {
-      requestBody.max_completion_tokens = options?.maxTokens ?? 4096;
-    } else {
-      requestBody.max_tokens = options?.maxTokens ?? 4096;
-    }
-
-    if (options?.topP !== undefined) {
-      requestBody.top_p = options.topP;
-    }
-
-    if (options?.stopSequences) {
-      requestBody.stop = options.stopSequences;
-    }
-
-    // Debug logging
-    console.log('[Evergreen Cultivator] OpenAI API Request:', {
-      model: this.modelId,
-      isReasoningModel,
-      messagesCount: openaiMessages.length,
-    });
-
     try {
-      const response = await this.makeRequest<OpenAIResponse>({
-        url: `${this.config.endpoint}/chat/completions`,
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
+      const body = buildOpenAIBody(messages, this.modelId, {
+        maxTokens: options?.maxTokens,
+        temperature: options?.temperature,
       });
 
-      if (response.error) {
-        return {
-          success: false,
-          content: '',
-          error: response.error.message,
-        };
-      }
+      const json = await this.makeRequest<Record<string, unknown>>({
+        url: `${this.config.endpoint}/chat/completions`,
+        method: 'POST',
+        headers: { Authorization: `Bearer ${this.apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
 
-      const content = response.choices?.[0]?.message?.content ?? '';
-
-      if (!content) {
-        return {
-          success: false,
-          content: '',
-          error: 'OpenAI returned empty response content',
-        };
+      const result = parseOpenAIResponse(json);
+      if (!result.success) {
+        return { success: false, content: '', error: result.error };
       }
 
       return {
         success: true,
-        content,
-        usage: response.usage
-          ? {
-              inputTokens: response.usage.prompt_tokens,
-              outputTokens: response.usage.completion_tokens,
-              totalTokens: response.usage.total_tokens,
-            }
-          : undefined,
+        content: result.text,
+        usage: {
+          inputTokens: result.usage.inputTokens,
+          outputTokens: result.usage.outputTokens,
+          totalTokens: result.usage.totalTokens,
+        },
       };
     } catch (error) {
       return this.handleError(error);
