@@ -12,5 +12,4 @@ export type {
   LLMResponse,
   LLMGenerateOptions,
   LLMProviderType,
-  ModelConfig,
 } from './llm-provider.interface';

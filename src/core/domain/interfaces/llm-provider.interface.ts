@@ -78,19 +78,9 @@ export interface ILLMProvider {
   testApiKey(apiKey: string): Promise<boolean>;
 }
 
-/**
- * 프로바이더 타입
- */
-export type LLMProviderType = 'claude' | 'openai' | 'gemini' | 'grok';
+import type { AIProviderType } from 'obsidian-llm-shared';
 
 /**
- * 모델 설정
+ * 프로바이더 타입 — AIProviderType 의 backward-compatible alias
  */
-export interface ModelConfig {
-  id: string;
-  name: string;
-  provider: LLMProviderType;
-  maxTokens: number;
-  inputCostPer1k: number;
-  outputCostPer1k: number;
-}
+export type LLMProviderType = AIProviderType;

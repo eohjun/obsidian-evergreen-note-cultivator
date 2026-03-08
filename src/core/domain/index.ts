@@ -33,14 +33,19 @@ export type {
   LLMResponse,
   LLMGenerateOptions,
   LLMProviderType,
-  ModelConfig,
 } from './interfaces';
 
-// Constants
+// Constants (from obsidian-llm-shared via model-configs.ts)
 export {
   AI_PROVIDERS,
   MODEL_CONFIGS,
   getModelsByProvider,
   getModelConfigById,
+  getModelConfig,
+  getProviderConfig,
+  isReasoningModel,
+  getEffectiveMaxTokens,
+  getThinkingConfig,
+  calculateCost,
 } from './constants';
-export type { AIProviderConfig } from './constants';
+export type { AIProviderType, AIProviderConfig, ModelConfig } from './constants';
