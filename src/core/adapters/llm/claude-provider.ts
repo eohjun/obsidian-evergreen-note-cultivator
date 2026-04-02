@@ -16,22 +16,15 @@ export class ClaudeProvider extends BaseProvider {
 
   async testApiKey(apiKey: string): Promise<boolean> {
     try {
-      const body = buildAnthropicBody(
-        [{ role: 'user', content: 'Hello' }],
-        this.config.defaultModel,
-        { maxTokens: 10 }
-      );
       const json = await this.makeRequest<Record<string, unknown>>({
-        url: `${this.config.endpoint}/messages`,
-        method: 'POST',
+        url: `${this.config.endpoint}/models`,
+        method: 'GET',
         headers: {
           'x-api-key': apiKey,
           'anthropic-version': '2023-06-01',
-          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(body),
       });
-      return parseAnthropicResponse(json).success;
+      return Array.isArray((json as { data?: unknown }).data);
     } catch {
       return false;
     }

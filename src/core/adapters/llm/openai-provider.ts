@@ -15,18 +15,12 @@ export class OpenAIProvider extends BaseProvider {
 
   async testApiKey(apiKey: string): Promise<boolean> {
     try {
-      const body = buildOpenAIBody(
-        [{ role: 'user', content: 'Hello' }],
-        this.config.defaultModel,
-        { maxTokens: 10 }
-      );
       const json = await this.makeRequest<Record<string, unknown>>({
-        url: `${this.config.endpoint}/chat/completions`,
-        method: 'POST',
-        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        url: `${this.config.endpoint}/models`,
+        method: 'GET',
+        headers: { Authorization: `Bearer ${apiKey}` },
       });
-      return parseOpenAIResponse(json).success;
+      return Array.isArray((json as { data?: unknown }).data);
     } catch {
       return false;
     }

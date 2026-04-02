@@ -13,19 +13,11 @@ export class GeminiProvider extends BaseProvider {
 
   async testApiKey(apiKey: string): Promise<boolean> {
     try {
-      const body = buildGeminiBody(
-        [{ role: 'user', content: 'Hello' }],
-        this.config.defaultModel,
-        { maxTokens: 10 }
-      );
-      const url = getGeminiGenerateUrl(this.config.defaultModel, apiKey, this.config.endpoint);
       const json = await this.makeRequest<Record<string, unknown>>({
-        url,
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        url: `${this.config.endpoint}/models?key=${apiKey}`,
+        method: 'GET',
       });
-      return parseGeminiResponse(json).success;
+      return Array.isArray((json as { models?: unknown }).models);
     } catch {
       return false;
     }
