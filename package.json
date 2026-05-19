@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-evergreen-note-cultivator",
-	"version": "0.2.10",
+	"version": "0.2.11",
 	"description": "Guide note growth from seed to evergreen with AI-powered assessment and feedback",
 	"main": "main.js",
 	"scripts": {
@@ -28,6 +28,6 @@
 		"typescript": "^6.0.2"
 	},
 	"dependencies": {
-		"obsidian-llm-shared": "github:eohjun/obsidian-llm-shared#v1.4.0"
+		"obsidian-llm-shared": "github:eohjun/obsidian-llm-shared#v1.4.1"
 	}
 }
